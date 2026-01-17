@@ -1,0 +1,270 @@
+[
+  {
+    "name": "Qwen: Qwen3 32B",
+    "identifier": "qwen/qwen3-32b",
+    "think": true,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "MoonshotAI: Kimi K2 Thinking",
+    "identifier": "moonshotai/kimi-k2-thinking",
+    "think": true,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "OpenAI: gpt-oss-120b",
+    "identifier": "openai/gpt-oss-120b",
+    "think": true,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "MoonshotAI: Kimi K2 0905",
+    "identifier": "moonshotai/kimi-k2-0905",
+    "think": false,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "Google: Gemini 3 Flash Preview",
+    "identifier": "google/gemini-3-flash-preview",
+    "think": true,
+    "inputs": [
+      "text",
+      "image",
+      "audio",
+      "video",
+      "pdf"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "Qwen: Qwen3 Next 80B A3B Instruct",
+    "identifier": "qwen/qwen3-next-80b-a3b-instruct",
+    "think": false,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "Qwen: Qwen3 VL 235B A22B Instruct",
+    "identifier": "qwen/qwen3-vl-235b-a22b-instruct",
+    "think": false,
+    "inputs": [
+      "text",
+      "image"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "Z.AI: GLM 4.7",
+    "identifier": "z-ai/glm-4.7",
+    "think": true,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "DeepSeek: DeepSeek V3.2 Speciale",
+    "identifier": "deepseek/deepseek-v3.2-speciale",
+    "think": true,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "DeepSeek: DeepSeek V3.2",
+    "identifier": "deepseek/deepseek-v3.2",
+    "think": true,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "xAI: Grok 4.1 Fast",
+    "identifier": "x-ai/grok-4.1-fast",
+    "think": true,
+    "inputs": [
+      "text",
+      "image"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "NVIDIA: Nemotron Nano 12B 2 VL",
+    "identifier": "nvidia/nemotron-nano-12b-v2-vl",
+    "think": null,
+    "inputs": null,
+    "outputs": null
+  },
+  {
+    "name": "Google: Gemini 2.5 Flash",
+    "identifier": "google/gemini-2.5-flash",
+    "think": true,
+    "inputs": [
+      "text",
+      "image",
+      "audio",
+      "video",
+      "pdf"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "OpenAI: GPT-5.1",
+    "identifier": "openai/gpt-5.1",
+    "think": true,
+    "inputs": [
+      "text",
+      "image"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "OpenAI: GPT-5 Mini",
+    "identifier": "openai/gpt-5-mini",
+    "think": true,
+    "inputs": [
+      "text",
+      "image"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "DeepSeek: DeepSeek V3.2 Exp",
+    "identifier": "deepseek/deepseek-v3.2-exp",
+    "think": false,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "DeepSeek: R1 0528",
+    "identifier": "deepseek/deepseek-r1-0528",
+    "think": true,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "Z.AI: GLM 4.6",
+    "identifier": "z-ai/glm-4.6",
+    "think": true,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "Google: Gemini 2.5 Flash Image (Nano Banana)",
+    "identifier": "google/gemini-2.5-flash-image",
+    "think": null,
+    "inputs": null,
+    "outputs": null
+  },
+  {
+    "name": "Qwen: Qwen3 235B A22B",
+    "identifier": "qwen/qwen3-235b-a22b",
+    "think": true,
+    "inputs": [
+      "text"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "DeepSeek: R1 Distill Qwen 32B",
+    "identifier": "deepseek/deepseek-r1-distill-qwen-32b",
+    "think": null,
+    "inputs": null,
+    "outputs": null
+  },
+  {
+    "name": "Google: Gemini 3 Pro Preview",
+    "identifier": "google/gemini-3-pro-preview",
+    "think": true,
+    "inputs": [
+      "text",
+      "image",
+      "video",
+      "audio",
+      "pdf"
+    ],
+    "outputs": [
+      "text"
+    ]
+  },
+  {
+    "name": "Google: Nano Banana Pro (Gemini 3 Pro Image Preview)",
+    "identifier": "google/gemini-3-pro-image-preview",
+    "think": null,
+    "inputs": null,
+    "outputs": null
+  },
+  {
+    "name": "Google: Gemini 2.5 Flash Lite Preview 09-2025",
+    "identifier": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "think": true,
+    "inputs": [
+      "text",
+      "image",
+      "audio",
+      "video",
+      "pdf"
+    ],
+    "outputs": [
+      "text"
+    ]
+  }
+]

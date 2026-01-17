@@ -1,0 +1,21 @@
+{
+  "name": "ai-interface",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "bs": "browser-sync start --config bs-config.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@openrouter/sdk": "^0.3.10",
+    "browser-sync": "^3.0.4",
+    "express": "^5.2.1",
+    "nodemon": "^3.1.11"
+  }
+}
