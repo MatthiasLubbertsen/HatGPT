@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <!-- favicon -->
-    <link rel="icon" type="image/png" href="assets/image/hat.png">
+    <link rel="icon" type="image/png" href="assets/image/svg/hat/hat illustrator - v3 - thicker.svg">
 </head>
 
 <body>
@@ -20,7 +20,7 @@
                 <div class="sidebar-header">
                     <div class="sidebar-controls">
                         <button class="icon-btn" title="Close sidebar">
-                            <img src="assets/image/hat.png" alt="Icon" width="24" height="24">
+                            <img src="assets/image/svg/hat/hat illustrator - v3 - thicker.svg" alt="Icon" width="30" height="30">
                         </button>
                     </div>
                 </div>
@@ -49,6 +49,28 @@
                         <div class="chat-item">New Chat</div>
                         <div class="chat-item">New Chat</div>
                         <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
+                        <div class="chat-item">New Chat</div>
                     </div>
                 </div>
             </div>
@@ -56,7 +78,7 @@
                 <div class="user-profile-container">
                     <div class="user-info">
                         <div class="avatar-small">
-                            <img src="https://ui-avatars.com/api/?background=random&color=fff" alt="User">
+                            <img src="https://ui-avatars.com/api/?name=User&background=random&color=fff" alt="User">
                         </div>
                         <div class="user-details">
                             <div class="user-name">User</div>
@@ -72,9 +94,9 @@
 
         <main class="main-content">
             <div class="main-header">
-                <div class="brand-dropdown">
-                    <span class="brand-name">HatGPT</span>
-                    <i class="fa-solid fa-chevron-down"></i>
+                <div class="model-dropdown">
+                    <span class="model-name">openai/gpt-5.2</span>
+                    <img src="assets/image/svg/chevron-down.svg" style="width: 15px; height: 15px;" class="dropdown-icon" alt="Expand">
                 </div>
             </div>
             <div class="content-wrapper">
@@ -83,7 +105,7 @@
                     <button class="input-btn attach-btn">
                         <i class="fa-solid fa-plus"></i>
                     </button>
-                    <input type="text" class="chat-input" placeholder="Ask anything" id="promptInput">
+                    <textarea class="chat-input" placeholder="Ask anything" id="promptInput" rows="1"></textarea>
                     <div class="input-right-controls">
                         <button class="input-btn send-btn">
                             <i class="fa-solid fa-arrow-up"></i>
@@ -94,6 +116,8 @@
         </main>
     </div>
     <script src="index.js"></script>
+    <script src="greeting.js"></script>
+    <script src="models-dropdown.js"></script>
 
     <div id="service-status-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">

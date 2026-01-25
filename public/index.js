@@ -46,16 +46,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    promptInput.addEventListener('input', updateButtonState);
+    const adjustHeight = () => {
+        promptInput.style.height = 'auto';
+        
+        const computedStyle = window.getComputedStyle(promptInput);
+        const lineHeight = parseInt(computedStyle.lineHeight);
+        // Fallback if lineHeight is 'normal' or NaN, though we set 1.5 in CSS
+        const validLineHeight = isNaN(lineHeight) ? 24 : lineHeight;
+        
+        const maxHeight = validLineHeight * 4;
+        
+        if (promptInput.scrollHeight > maxHeight) {
+            promptInput.style.overflowY = 'auto';
+            promptInput.style.height = `${maxHeight}px`;
+        } else {
+            promptInput.style.overflowY = 'hidden';
+            promptInput.style.height = `${promptInput.scrollHeight}px`;
+        }
+    };
+
+    promptInput.addEventListener('input', () => {
+        updateButtonState();
+        adjustHeight();
+    });
     
     promptInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             const query = promptInput.value;
             if (query.trim()) {
                 console.log('User asked:', query);
                 // Here we would trigger the search/chat
                 promptInput.value = '';
                 updateButtonState();
+                adjustHeight();
             }
         }
     });
