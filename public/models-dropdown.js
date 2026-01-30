@@ -173,7 +173,7 @@ function initModelDropdown() {
     });
 
     // Local Storage & Initial Selection
-    const savedModelId = localStorage.getItem('hatgpt_selected_model');
+    const savedModelId = localStorage.getItem('selected_model');
     let initialModel = null;
     let initialFriendlyName = '';
 
@@ -207,7 +207,7 @@ function initModelDropdown() {
 
 function selectModel(model, friendlyName) {
     window.currentModel = model.id;
-    localStorage.setItem('hatgpt_selected_model', model.id);
+    localStorage.setItem('selected_model', model.id);
     const modelNameSpan = document.querySelector('.model-name');
     
     let displayText = friendlyName;

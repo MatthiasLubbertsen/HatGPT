@@ -505,3 +505,222 @@ body {
 .provider-item.active {
     background-color: #404040;
 }
+
+/* Chat UI Styles */
+.chat-history {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    overflow-y: auto;
+    flex: 1;
+    margin-bottom: 20px;
+    scrollbar-width: thin;
+}
+
+body.chat-mode .greeting {
+    display: none;
+}
+
+body.chat-mode .chat-history {
+    display: flex;
+}
+
+body.chat-mode .content-wrapper {
+    margin-top: 60px;
+    height: calc(100vh - 60px);
+    justify-content: flex-start;
+}
+
+body.chat-mode .chat-input-container {
+    margin-top: auto;
+    margin-bottom: 20px;
+}
+
+.message-row {
+    display: flex;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.user-message-row {
+    justify-content: flex-end;
+}
+
+.ai-message-row {
+    justify-content: flex-start;
+    flex-direction: column;
+}
+
+.message-bubble {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    line-height: 1.5;
+    font-size: 1rem;
+    position: relative;
+    word-wrap: break-word;
+}
+
+.user-message {
+    background-color: #2f2f2f;
+    color: #ececec;
+    border-top-right-radius: 2px;
+}
+
+.ai-message {
+    background-color: transparent;
+    color: #ececec;
+    padding-left: 0;
+    max-width: 80%; /* Ensure AI bubble respects the same width */
+}
+
+/* AI Action Buttons */
+.ai-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 0px; 
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-left: 0;
+}
+
+.ai-message-row:hover .ai-actions {
+    opacity: 1;
+}
+
+.action-btn {
+    background: transparent;
+    border: none;
+    color: var(--icon-color);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+}
+
+.action-btn:hover {
+    background-color: #333;
+    color: #ececec;
+}
+
+/* Markdown Styles */
+.markdown-content p {
+    margin-bottom: 10px;
+}
+.markdown-content p:last-child {
+    margin-bottom: 0;
+}
+.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.markdown-content code {
+    background-color: #333;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+.markdown-content pre {
+    background-color: #1e1e1e;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 10px 0;
+}
+.markdown-content pre code {
+    background-color: transparent;
+    padding: 0;
+}
+.markdown-content ul, .markdown-content ol {
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+.markdown-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10px 0;
+}
+.markdown-content th, .markdown-content td {
+    border: 1px solid #444;
+    padding: 8px;
+    text-align: left;
+}
+.markdown-content th {
+    background-color: #333;
+}
+.markdown-content hr {
+    border: none;
+    border-top: 1px solid #444;
+    margin: 20px 0;
+}
+.markdown-content a {
+    color: #58a6ff;
+    text-decoration: none;
+}
+.markdown-content a:hover {
+    text-decoration: underline;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 0;
+}
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #888;
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out both;
+}
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+/* Refresh Popup */
+.refresh-popup {
+    position: absolute;
+    background-color: #2f2f2f;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    min-width: 220px;
+}
+.refresh-header {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    color: #888;
+    border-bottom: 1px solid #333;
+    margin-bottom: 4px;
+}
+.refresh-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+    border-radius: 6px;
+    color: #ececec;
+    font-size: 0.9rem;
+}
+.refresh-option:hover {
+    background-color: #404040;
+}
+.refresh-option i {
+    width: 16px;
+    text-align: center;
+    color: #aaa;
+    font-size: 0.9rem;
+}

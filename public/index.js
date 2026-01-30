@@ -70,6 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
         adjustHeight();
     });
     
+    // Keydown handler moved to aichat.js to centralize chat logic
+    /*
     promptInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -83,4 +85,5 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    */
 });
