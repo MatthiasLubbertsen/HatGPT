@@ -3,8 +3,7 @@ module.exports = {
   files: [
     "**/*.css",
     "**/*.js",
-    "**/*.html",
-    "**/*.php"
+    "**/*.html"
   ],
   open: true,
   notify: false

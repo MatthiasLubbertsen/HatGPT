@@ -144,8 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let model = 'openai/gpt-4o'; // Fallback
         
         // Determine model
-        if (window.currentModel && window.currentModel.id) {
-            model = window.currentModel.id;
+        if (window.currentModel) {
+            model = window.currentModel;
         } else {
             // Try reading DOM
             const modelNameEl = document.querySelector('.model-name');

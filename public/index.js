@@ -2,6 +2,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const promptInput = document.getElementById('promptInput');
     const sendBtn = document.querySelector('.send-btn');
 
+    // Check API Key status
+    const userStatus = document.querySelector('.user-status');
+    if (userStatus) {
+        if (localStorage.getItem('apiKey')) {
+            userStatus.textContent = 'API Key set';
+            userStatus.style.color = ''; // Reset to default
+        } else {
+            userStatus.textContent = 'API Key missing';
+            userStatus.style.color = '#ff6b6b';
+        }
+    }
+
     // Autofocus on load
     promptInput.focus();
 
@@ -87,3 +99,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     */
 });
+
+window.configureApiKey = function() {
+    const currentKey = localStorage.getItem('apiKey') || '';
+    const newKey = prompt('Please enter your API Key:', currentKey);
+    if (newKey !== null) {
+        localStorage.setItem('apiKey', newKey);
+        window.location.reload();
+    }
+};

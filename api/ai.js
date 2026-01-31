@@ -5,6 +5,7 @@ export default async function handler(req, res) {
   }
 
   const { apiKey, model, prompt, modalities, image_config } = req.body;
+  console.log("Received request with model:", model, "and prompt:", prompt);
 
   if (!apiKey || !model || !prompt) {
     return res.status(400).json({ error: 'Missing required fields: apiKey, model, prompt' });
