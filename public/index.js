@@ -81,23 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonState();
         adjustHeight();
     });
-    
-    // Keydown handler moved to aichat.js to centralize chat logic
-    /*
-    promptInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            const query = promptInput.value;
-            if (query.trim()) {
-                console.log('User asked:', query);
-                // Here we would trigger the search/chat
-                promptInput.value = '';
-                updateButtonState();
-                adjustHeight();
-            }
-        }
-    });
-    */
 });
 
 window.configureApiKey = function() {
