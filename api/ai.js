@@ -3,26 +3,31 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { apiKey, model, prompt, modalities, image_config } = req.body;
-  console.log("Received request with model:", model, "and prompt:", prompt);
+  const { apiKey, model, messages, modalities, image_config } = req.body;
+  console.log("Received request with model:", model, "and messages count:", Array.isArray(messages) ? messages.length : 0);
 
-  if (!apiKey || !model || !prompt) {
-    return res.status(400).json({ error: 'Missing required fields: apiKey, model, prompt' });
+  if (!apiKey || !model || !Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ error: 'Missing required fields: apiKey, model, messages[]' });
   }
 
   try {
+    const systemMessage = {
+      role: 'system',
+      content: [{ type: 'input_text', text: "You are HatGPT, an upbeat, concise guide for Hack Clubbers (teens in the community Hack Club, where thy code and get free stuff). Speak with warmth, curiosity, and a bias for action. Keep answers short, safe, and helpful. Use Markdown for clarity. Offer code or steps when useful; avoid fluff and unnecessary disclaimers. You are open source and your repo is at github.com/MatthiasLubbertsen/HatGPT" }],
+    };
+
+    const inputMessages = [systemMessage, ...messages];
+
     const requestBody = {
-      model: model,
-      messages: [
-        { role: "user", content: prompt },
-      ],
+      model,
+      input: inputMessages,
       stream: true,
     };
 
     if (modalities) requestBody.modalities = modalities;
     if (image_config) requestBody.image_config = image_config;
 
-    const response = await fetch("https://ai.hackclub.com/proxy/v1/chat/completions", {
+    const response = await fetch("https://ai.hackclub.com/proxy/v1/responses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -49,46 +54,78 @@ export default async function handler(req, res) {
     });
 
     if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let accumulatedText = '';
+      const sentImages = new Set();
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
             
-            const chunk = decoder.decode(value, { stream: true });
-            buffer += chunk;
-            const lines = buffer.split('\n');
-            buffer = lines.pop();
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
 
-            for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed === 'data: [DONE]') continue;
-                if (trimmed.startsWith('data: ')) {
-                    try {
-                        const data = JSON.parse(trimmed.slice(6));
-                        const delta = data.choices?.[0]?.delta;
-                        const message = data.choices?.[0]?.message;
-                        
-                        if (delta?.content) {
-                            res.write(`data: ${JSON.stringify({ text: delta.content })}\n\n`);
-                        }
-                        
-                        const images = delta?.images || message?.images;
-                        if (images && Array.isArray(images)) {
-                             for (const img of images) {
-                                if (img.type === 'image_url' && img.image_url?.url) {
-                                    res.write(`data: ${JSON.stringify({ image: img.image_url.url })}\n\n`);
-                                }
-                             }
-                        }
-                    } catch (e) {
-                        console.error('Error parsing upstream chunk', e);
-                    }
-                }
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed === 'data: [DONE]') continue;
+          if (!trimmed.startsWith('data: ')) continue;
+
+          try {
+            const data = JSON.parse(trimmed.slice(6));
+
+            // Pass through upstream id if present
+            if (data.id) {
+              res.write(`data: ${JSON.stringify({ id: data.id })}\n\n`);
             }
+
+            // Handle streaming event types from the Responses API
+            if (data.type === 'response.output_text.delta' && typeof data.delta === 'string') {
+              accumulatedText += data.delta;
+              res.write(`data: ${JSON.stringify({ text: data.delta })}\n\n`);
+            }
+
+            if (data.type === 'response.output_image.generated') {
+              const url = data.image_url?.url || data.url;
+              if (url && !sentImages.has(url)) {
+                sentImages.add(url);
+                res.write(`data: ${JSON.stringify({ image: url })}\n\n`);
+              }
+            }
+
+            // Fallback for completed payloads that include full output array
+            const outputs = Array.isArray(data.output) ? data.output : Array.isArray(data.response?.output) ? data.response.output : [];
+            for (const output of outputs) {
+              const content = Array.isArray(output.content) ? output.content : [];
+              for (const item of content) {
+                if (item.type === 'output_text' && typeof item.text === 'string') {
+                  let delta = item.text;
+                  if (accumulatedText && item.text.startsWith(accumulatedText)) {
+                    delta = item.text.slice(accumulatedText.length);
+                  }
+                  accumulatedText += delta;
+                  if (delta) {
+                    res.write(`data: ${JSON.stringify({ text: delta })}\n\n`);
+                  }
+                }
+
+                if ((item.type === 'output_image' || item.type === 'output_image_url' || item.type === 'image_url') && (item.image_url?.url || item.url)) {
+                  const url = item.image_url?.url || item.url;
+                  if (url && !sentImages.has(url)) {
+                    sentImages.add(url);
+                    res.write(`data: ${JSON.stringify({ image: url })}\n\n`);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Error parsing upstream chunk', e);
+          }
         }
+      }
     }
     res.end();
 

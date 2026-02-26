@@ -4,15 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HatGPT
-    </title>
+    <title>HatGPT</title>
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- favicon -->
-    <link rel="icon" type="image/png" href="assets/image/svg/hat/hat illustrator - v3 - thicker.svg">
+    <link rel="icon" type="image/png" href="assets/image/svg/hat/hat%20illustrator%20-%20v3%20-%20thicker.svg">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
+    <script src="https://js-de.sentry-cdn.com/edaefe97091d5f0c2c3116e49ef179af.min.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -21,17 +20,19 @@
             <div class="sidebar-top">
                 <div class="sidebar-header">
                     <div class="sidebar-controls">
-                        <button class="icon-btn" title="Close sidebar">
-                            <img src="assets/image/svg/hat/hat illustrator - v3 - thicker.svg" alt="Icon" width="30" height="30">
+                        <button class="icon-btn" title="HatGPT">
+                            <img src="assets/image/svg/hat/hat%20illustrator%20-%20v3%20-%20thicker.svg" alt="Icon"
+                                width="30" height="30">
                         </button>
                     </div>
                 </div>
+
                 <nav class="sidebar-nav">
-                    <div class="nav-item"  onclick="location.href='/'">
+                    <div class="nav-item nav-new-chat" role="button">
                         <i class="fa-regular fa-pen-to-square"></i>
                         <span class="nav-text">New chat</span>
                     </div>
-                    <div class="nav-item">
+                    <div class="nav-item nav-search" id="searchChatsNav" role="button">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <span class="nav-text">Search chats</span>
                     </div>
@@ -39,55 +40,25 @@
 
                 <div class="chats-section">
                     <div class="section-header">Your chats</div>
-                    <div class="chat-list">
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
-                        <div class="chat-item">New Chat</div>
+                    <div class="chat-list" id="chatList">
+                        <div class="chat-empty">No chats yet</div>
                     </div>
                 </div>
             </div>
+
             <div class="sidebar-bottom">
                 <div class="user-profile-container">
                     <div class="user-info">
                         <div class="avatar-small">
-                            <img src="https://ui-avatars.com/api/?name=User&background=random&color=fff" alt="User">
+                            <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=random&color=fff"
+                                alt="User">
                         </div>
                         <div class="user-details">
-                            <div class="user-name">User</div>
+                            <div class="user-name" id="userNameDisplay">User</div>
                             <div class="user-status">API Key set</div>
                         </div>
                     </div>
-                    <button class="settings-btn" onclick="configureApiKey()">
+                    <button class="settings-btn" id="openSettings">
                         Settings
                     </button>
                 </div>
@@ -98,7 +69,8 @@
             <div class="main-header">
                 <div class="model-dropdown">
                     <span class="model-name">openai/gpt-5.2</span>
-                    <img src="assets/image/svg/chevron-down.svg" style="width: 15px; height: 15px;" class="dropdown-icon" alt="Expand">
+                    <img src="assets/image/svg/chevron-down.svg" style="width: 15px; height: 15px;"
+                        class="dropdown-icon" alt="Expand">
                 </div>
             </div>
             <div class="content-wrapper">
@@ -118,15 +90,77 @@
             </div>
         </main>
     </div>
-    <script src="index.js"></script>
-    <script src="greeting.js"></script>
-    <script src="models-dropdown.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-    <script src="aichat.js"></script>
-</body>
+
+    <div id="settings-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content settings-modal">
+            <div class="modal-header modal-header-inline">
+                <h2>Profile & API</h2>
+                <button class="modal-close" id="settingsClose" aria-label="Close settings">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form class="modal-body settings-body" id="settingsForm">
+                <div class="form-group">
+                    <label for="userNameInput">Display name</label>
+                    <input id="userNameInput" name="userName" type="text" class="input-field" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <div class="switch-row">
+                        <div class="switch-copy">
+                            <div class="switch-title">Use Gravatar</div>
+                            <div class="switch-hint">When on, enter your Gravatar email below.</div>
+                        </div>
+                        <label class="toggle-switch" for="useGravatarInput">
+                            <input id="useGravatarInput" name="useGravatar" type="checkbox">
+                            <span class="switch-track"><span class="switch-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="avatarInput" class="label-with-icon">
+                        <span id="avatarLabelText">Profile picture URL / Gravatar email</span>
+                        <i id="avatarWarning" class="warning-icon fa-solid fa-triangle-exclamation" data-tooltip="Avatar could not be loaded"></i>
+                    </label>
+                    <input id="avatarInput" name="avatar" type="text" class="input-field"
+                        placeholder="https://example.com/avatar.png">
+                </div>
+                <div class="form-group">
+                    <label for="apiKeyInput">API key</label>
+                    <input id="apiKeyInput" name="apiKey" type="password" class="input-field"
+                        placeholder="Enter your API key">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="modal-button secondary" id="settingsCancel">Cancel</button>
+                    <button type="submit" class="modal-button primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="search-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content search-modal">
+            <div class="modal-header modal-header-inline">
+                <h2>Search chats</h2>
+                <button class="modal-close" id="searchClose" aria-label="Close search">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body search-body">
+                <div class="search-input-row">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="chatSearchModalInput" type="text" placeholder="Search chats" autocomplete="off">
+                    <button class="clear-search" type="button" id="searchClear" aria-label="Clear search">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="search-results" id="chatSearchResults">
+                    <div class="chat-empty">No chats yet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="service-status-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Downtime</h2>
@@ -138,6 +172,15 @@
             </div>
         </div>
     </div>
+
+    <script src="index.js"></script>
+    <script src="greeting.js"></script>
+    <script src="models-dropdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="aichat.js"></script>
 </body>
 
 </html>
