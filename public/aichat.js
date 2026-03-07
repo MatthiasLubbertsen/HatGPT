@@ -22,6 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const SELECTION_BTN_OFFSET = 6;
     const QUOTE_SYSTEM_PREFIX = "The user selected this part of your previous message, they want to react to this part:\n";
 
+    const getAttachmentState = () => (typeof window.getHatAttachmentState === 'function'
+        ? window.getHatAttachmentState()
+        : null);
+
     let chats = [];
     let currentChatId = null;
 
@@ -313,7 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const ui = addMessage(role, displayText, false, displayQuote);
+            const attachments = Array.isArray(message.attachments) ? message.attachments : [];
+            const ui = addMessage(role, displayText, false, displayQuote, attachments);
             if (role === 'ai') {
                 renderMath(ui.bubble);
                 addAiActions(ui.row, findPreviousUserPrompt(chatHistoryState, idx));
@@ -410,9 +415,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateButtonState = () => {
+        const attachment = getAttachmentState();
+        const hasAttachment = !!(attachment && (attachment.status === 'uploading' || attachment.url));
+        const blocked = !!(attachment && attachment.blockReason);
         const hasText = !!promptInput.value.trim();
         const hasLockedSnippet = !!selectionSnippet;
-        const shouldDisable = isBotBusy || (!hasText && !hasLockedSnippet);
+        const hasAnyInput = hasText || hasLockedSnippet || hasAttachment;
+        const shouldDisable = isBotBusy || blocked || !hasAnyInput || (attachment && attachment.status === 'uploading');
         sendBtn.disabled = shouldDisable;
         sendBtn.classList.toggle('is-busy', isBotBusy);
     };
@@ -528,6 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('selectionchange', maybeShowSelectionButton);
     window.addEventListener('scroll', hideSelectionButton);
+    window.addEventListener('hat-attachment-changed', updateButtonState);
 
     // Initialize UI behavior
     promptInput.addEventListener('input', () => {
@@ -620,23 +630,36 @@ document.addEventListener('DOMContentLoaded', () => {
         window.hatgptBotBusy = isBotBusy;
         sendBtn?.classList.toggle('is-busy', isBotBusy);
         promptInput?.classList.toggle('is-busy', isBotBusy);
-        sendBtn.title = isBotBusy ? 'Waiting for the AI response' : '';
+        const attachment = getAttachmentState();
+        if (!attachment || !attachment.blockReason) {
+            sendBtn.title = isBotBusy ? 'Waiting for the AI response' : '';
+        }
         updateButtonState();
     };
 
     // Send Logic
     const handleSend = async () => {
         if (isBotBusy) return;
-        
-        const userText = promptInput.value.trim();
+        const attachment = getAttachmentState();
+        if (attachment?.blockReason) return;
+
+        let userText = promptInput.value.trim();
         const currentSnippet = selectionSnippet; // Capture logic
-        
+
         // This is what the AI sees
         let textForAI = userText;
-        if (currentSnippet) {
-            textForAI = `${QUOTE_SYSTEM_PREFIX}"${currentSnippet}"\n\nUser: ${userText}`;
+        if (!textForAI && currentSnippet) {
+            textForAI = 'Please review this highlighted text.';
         }
-        
+
+        if (currentSnippet) {
+            textForAI = `${QUOTE_SYSTEM_PREFIX}"${currentSnippet}"\n\nUser: ${userText || 'Please review this selection.'}`;
+        }
+
+        if (!textForAI && attachment?.url) {
+            textForAI = 'Attached a file for you to review.';
+        }
+
         if (!textForAI) return;
 
         setBotBusy(true);
@@ -651,18 +674,32 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonState();
         hideSelectionPreview();
 
+        const attachmentsForMessage = attachment?.url ? [attachment] : [];
+        const contentBlocks = [{ type: 'input_text', text: textForAI }];
+        if (attachment?.url) {
+            if (attachment.kind === 'image') {
+                contentBlocks.push({ type: 'input_image_url', image_url: attachment.url });
+            } else {
+                contentBlocks.push({ type: 'input_text', text: `File URL: ${attachment.url}` });
+            }
+        }
+
         // Switch UI to chat mode
         document.body.classList.add('chat-mode');
 
         // 1. Add User Message
         // Pass currentSnippet as the 4th argument (quote) so it renders above the bubble
-        addMessage('user', userText, false, currentSnippet);
+        const displayUserText = userText || (attachment?.url ? 'Sent an attachment.' : '');
+        addMessage('user', displayUserText, false, currentSnippet, attachmentsForMessage);
 
         chatHistoryState.push({ 
             type: 'message', 
             role: 'user', 
-            content: [{ type: 'input_text', text: textForAI }] 
+            content: contentBlocks,
+            attachments: attachmentsForMessage
         });
+
+        window.clearHatAttachment?.();
 
         saveCurrentChat();
         if (chat) {
@@ -709,7 +746,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Message Handling
-    function addMessage(role, text, isLoading = false, quote = null) {
+    function addMessage(role, text, isLoading = false, quote = null, attachments = []) {
         const row = document.createElement('div');
         row.className = `message-row ${role}-message-row`;
         
@@ -737,6 +774,46 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             bubble.textContent = text;
+        }
+
+        if (attachments && attachments.length && role === 'user') {
+            const attachmentRow = document.createElement('div');
+            attachmentRow.className = 'message-attachments';
+
+            attachments.forEach((att) => {
+                const chip = document.createElement('div');
+                chip.className = 'message-attachment';
+
+                if (att.kind === 'image' && att.url) {
+                    const img = document.createElement('img');
+                    img.src = att.url;
+                    img.alt = att.name || 'Attachment';
+                    chip.appendChild(img);
+                } else {
+                    const icon = document.createElement('div');
+                    icon.className = 'file-icon';
+                    icon.innerHTML = '<i class="fa-regular fa-file"></i>';
+                    chip.appendChild(icon);
+                }
+
+                const name = document.createElement('div');
+                name.className = 'file-name';
+                const label = att.name || att.url || 'Attachment';
+                if (att.url) {
+                    const link = document.createElement('a');
+                    link.href = att.url;
+                    link.target = '_blank';
+                    link.rel = 'noreferrer noopener';
+                    link.textContent = label;
+                    name.appendChild(link);
+                } else {
+                    name.textContent = label;
+                }
+                chip.appendChild(name);
+                attachmentRow.appendChild(chip);
+            });
+
+            bubble.appendChild(attachmentRow);
         }
 
         row.appendChild(bubble);
@@ -802,11 +879,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const hasImageInput = Array.isArray(lastUserMsg?.content) && lastUserMsg.content.some((c) => c.type === 'input_image_url');
+        const requestPayload = { apiKey, model, messages: chatHistoryState };
+        if (hasImageInput) {
+            requestPayload.modalities = ['text', 'image'];
+        }
+
         try {
             const response = await fetch('/api/ai', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey, model, messages: chatHistoryState })
+                body: JSON.stringify(requestPayload)
             });
 
             if (!response.ok) {

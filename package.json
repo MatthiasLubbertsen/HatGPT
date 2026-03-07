@@ -15,6 +15,7 @@
   "dependencies": {
     "@openrouter/sdk": "^0.3.10",
     "browser-sync": "^3.0.4",
+    "busboy": "^1.6.0",
     "express": "^5.2.1",
     "nodemon": "^3.1.11"
   }

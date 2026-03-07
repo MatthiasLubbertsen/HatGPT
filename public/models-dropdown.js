@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const response = await fetch('/api/models');
         const json = await response.json();
         availableModels = json.data;
+        window.hatAvailableModels = availableModels;
+        window.availableModels = availableModels;
+        window.dispatchEvent(new CustomEvent('hat-models-loaded', { detail: { models: availableModels } }));
         initModelDropdown();
     } catch (error) {
         console.error('Failed to load models:', error);
@@ -208,6 +211,7 @@ function initModelDropdown() {
 function selectModel(model, friendlyName) {
     window.currentModel = model.id;
     localStorage.setItem('selected_model', model.id);
+    window.dispatchEvent(new CustomEvent('hat-model-changed', { detail: { modelId: model.id } }));
     const modelNameSpan = document.querySelector('.model-name');
     
     let displayText = friendlyName;

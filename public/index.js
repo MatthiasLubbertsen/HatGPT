@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const avatarLabelText = document.getElementById('avatarLabelText');
 
     const isBotBusy = () => Boolean(window.hatgptBotBusy);
+    const getAttachmentState = () => (typeof window.getHatAttachmentState === 'function'
+        ? window.getHatAttachmentState()
+        : null);
 
     let pendingAvatarUrl = localStorage.getItem('avatarUrl') || '';
     let pendingGravatarEmail = localStorage.getItem('gravatarEmail') || '';
@@ -387,7 +390,11 @@ document.addEventListener('DOMContentLoaded', () => {
     sendBtn.disabled = true;
 
     const updateButtonState = () => {
-        sendBtn.disabled = isBotBusy() || !promptInput.value.trim();
+        const attachment = getAttachmentState();
+        const hasAttachment = !!(attachment && (attachment.status === 'uploading' || attachment.url));
+        const blocked = !!(attachment && attachment.blockReason);
+        const shouldDisable = isBotBusy() || blocked || (!promptInput.value.trim() && !hasAttachment);
+        sendBtn.disabled = shouldDisable;
         sendBtn.classList.toggle('is-busy', isBotBusy());
     };
 
@@ -412,4 +419,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonState();
         adjustHeight();
     });
+
+    window.addEventListener('hat-attachment-changed', updateButtonState);
 });
