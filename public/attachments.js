@@ -333,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (snapshot?.blockReason === 'unsupported-model') {
                 e.preventDefault();
                 e.stopPropagation();
-                showPopover('Switch to a vision model to send this image.');
+                showPopover('Switch to a vision model to send this file.');
             } else if (snapshot?.blockReason === 'uploading') {
                 e.preventDefault();
                 e.stopPropagation();
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sendArea.addEventListener('mouseenter', () => {
             const snapshot = window.getHatAttachmentState ? window.getHatAttachmentState() : null;
             if (snapshot?.blockReason === 'unsupported-model' && !popoverEl) {
-                showPopover('Switch to a vision model to send this image.');
+                showPopover('Switch to a vision model to send this file.');
             }
         });
     }
