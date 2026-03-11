@@ -29,8 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
         name: '',
         size: 0,
         mimeType: '',
-        kind: '', // image | file
+        kind: '', // image | pdf | text
         url: '',
+        textContent: '',
         previewUrl: '',
         error: ''
     };
@@ -90,7 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const currentBlockReason = () => {
         if (state.status === 'uploading') return 'uploading';
-        if (state.url && !modelSupportsAttachments()) return 'unsupported-model';
+        // Only images require a vision-capable model; PDFs and text files work with any model
+        if (state.kind === 'image' && state.url && !modelSupportsAttachments()) return 'unsupported-model';
         if (state.status === 'error') return 'error';
         return '';
     };
@@ -105,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (sendBtn) {
             if (blockReason === 'unsupported-model') {
-                sendBtn.title = 'This model cannot accept files. Pick a vision model.';
+                sendBtn.title = 'This model cannot accept images. Pick a vision model.';
             } else if (blockReason === 'uploading') {
                 sendBtn.title = 'Wait for the upload to finish.';
             } else if (blockReason === 'error') {
@@ -127,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mimeType: '',
             kind: '',
             url: '',
+            textContent: '',
             previewUrl: '',
             error: ''
         };
@@ -190,7 +193,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const icon = document.createElement('div');
             icon.className = 'attachment-icon';
-            icon.innerHTML = '<i class="fa-regular fa-file"></i>';
+            if (state.kind === 'pdf') {
+                icon.innerHTML = '<i class="fa-regular fa-file-pdf"></i>';
+            } else {
+                icon.innerHTML = '<i class="fa-regular fa-file-code"></i>';
+            }
             visual.appendChild(icon);
         }
 
@@ -236,23 +243,54 @@ document.addEventListener('DOMContentLoaded', () => {
         renderPreview();
     };
 
-    const startUpload = (file, intent) => {
+    const getFileKind = (file, intent) => {
+        if (intent === 'photo' || file.type?.startsWith('image/')) return 'image';
+        if (file.type === 'application/pdf') return 'pdf';
+        return 'text';
+    };
+
+    const readFileAsText = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsText(file);
+    });
+
+    const startUpload = async (file, intent) => {
         if (!file) return;
         clearAttachment();
-        const isImage = file.type?.startsWith('image/');
+        const kind = getFileKind(file, intent);
         state = {
             status: 'uploading',
             name: file.name,
             size: file.size,
             mimeType: file.type,
-            kind: intent === 'photo' || isImage ? 'image' : 'file',
+            kind,
             url: '',
-            previewUrl: URL.createObjectURL(file),
+            textContent: '',
+            previewUrl: kind === 'image' ? URL.createObjectURL(file) : '',
             error: ''
         };
         broadcastState();
         renderPreview();
-        uploadToBucky(file);
+
+        if (kind === 'image' || kind === 'pdf') {
+            await uploadToBucky(file);
+        } else {
+            // Read file as plain text locally — no upload needed
+            try {
+                const text = await readFileAsText(file);
+                state.textContent = text;
+                state.status = 'ready';
+                state.error = '';
+            } catch (err) {
+                state.status = 'error';
+                state.error = err?.message || 'Failed to read file';
+                console.error('File read error:', err);
+            }
+            broadcastState();
+            renderPreview();
+        }
     };
 
     const ensureModal = () => {
@@ -333,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (snapshot?.blockReason === 'unsupported-model') {
                 e.preventDefault();
                 e.stopPropagation();
-                showPopover('Switch to a vision model to send this file.');
+                showPopover('Switch to a vision model to send this image.');
             } else if (snapshot?.blockReason === 'uploading') {
                 e.preventDefault();
                 e.stopPropagation();
@@ -344,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sendArea.addEventListener('mouseenter', () => {
             const snapshot = window.getHatAttachmentState ? window.getHatAttachmentState() : null;
             if (snapshot?.blockReason === 'unsupported-model' && !popoverEl) {
-                showPopover('Switch to a vision model to send this file.');
+                showPopover('Switch to a vision model to send this image.');
             }
         });
     }
