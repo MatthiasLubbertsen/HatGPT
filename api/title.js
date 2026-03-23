@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const requestBody = {
       model: "qwen/qwen3-next-80b-a3b-instruct",
       messages: [
-        { role: "system", content: "You are a title generator. Your task is to create a short, 2-3 word title that summarizes the user's input. Do NOT reply to the user. Do NOT answer questions. Examples:\nInput: 'How do I bake a cake?' -> Title: Baking a Cake\nInput: 'Write a python script' -> Title: Python Script Generation\nInput: 'Hi' -> Title: User Greeting" },
+        { role: "system", content: "You are a conversation title generator.\n\nTask:\nCreate exactly one concise title (2-3 words) that summarizes the user's message.\n\nRules:\n- Output title text only.\n- Do not answer the user, ask questions, explain, or add extra words.\n- No quotes, no emojis, no punctuation at the end.\n- Use title case when appropriate.\n- Keep important technical terms exactly as written (e.g., API, JavaScript, PDF).\n\nIf the input is vague (e.g., 'hi', 'hello', 'thanks'), return: User greeting.\n\nExamples:\nInput: How do I bake a cake?\nTitle: Baking a Cake\nInput: Write a Python script to sort JSON files\nTitle: Python Script Sorting\nInput: Hello\nTitle: User greeting" },
         { role: "user", content: prompt },
       ],
       stream: true,
