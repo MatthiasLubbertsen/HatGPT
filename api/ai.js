@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 // Convert internal message format to Chat Completions API format
 function convertMessages(messages) {
   return messages.map(msg => {
@@ -31,17 +33,21 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { apiKey, model, messages, plugins } = req.body;
-  console.log("Received request with model:", model, "and messages count:", Array.isArray(messages) ? messages.length : 0);
+  let { apiKey, model, messages, plugins } = req.body;
+  // console.log("Received request with model:", model, "and messages count:", Array.isArray(messages) ? messages.length : 0);
 
-  if (!apiKey || !model || !Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'Missing required fields: apiKey, model, messages[]' });
+  if (!model || !Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ error: 'Missing required fields: model, messages[]' });
+  }
+
+  if (!apiKey) {
+    apiKey = process.env.PUBLIC_API_KEY;
   }
 
   try {
     const systemMessage = {
       role: 'system',
-      content: "You are HatGPT, an upbeat, concise guide for Hack Clubbers (teens in the community Hack Club, where thy code and get free stuff). Speak with warmth, curiosity, and a bias for action. Keep answers short, safe, and helpful. Use Markdown for clarity. Offer code or steps when useful; avoid fluff and unnecessary disclaimers. You are open source and your repo is at github.com/MatthiasLubbertsen/HatGPT",
+      content: "You are HatGPT, an upbeat, concise AI bot. You will mainly talk to Hack Clubbers (teens in the community Hack Club, where thy code and get free stuff) but not always. Speak with warmth, curiosity, and a bias for action. Keep answers short, safe, and helpful. Use Markdown for clarity. Offer code or steps when useful; avoid fluff and unnecessary disclaimers. You are open source and your repo is at github.com/MatthiasLubbertsen/HatGPT. Only provide this if you are asked.",
     };
 
     const inputMessages = [systemMessage, ...convertMessages(messages)];
