@@ -1,33 +1,66 @@
+import 'dotenv/config';
+
+// Convert internal message format to Chat Completions API format
+function convertMessages(messages) {
+  return messages.map(msg => {
+    const { type, id, status, attachments, ...rest } = msg;
+
+    if (Array.isArray(rest.content)) {
+      rest.content = rest.content.map(block => {
+        // Convert old Responses API formats to Chat Completions format
+        if (block.type === 'input_text') return { type: 'text', text: block.text };
+        if (block.type === 'output_text') return { type: 'text', text: block.text };
+        if (block.type === 'input_image_url') {
+          const url = typeof block.image_url === 'string' ? block.image_url : block.image_url?.url;
+          return { type: 'image_url', image_url: { url } };
+        }
+        // Pass through chat completions format (text, image_url, file)
+        return block;
+      });
+
+      // Simplify assistant messages to a plain string when there is only a text block
+      if (rest.role === 'assistant' && rest.content.length === 1 && rest.content[0].type === 'text') {
+        rest.content = rest.content[0].text;
+      }
+    }
+
+    return rest;
+  });
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { apiKey, model, messages, modalities, image_config } = req.body;
-  console.log("Received request with model:", model, "and messages count:", Array.isArray(messages) ? messages.length : 0);
+  let { apiKey, model, messages, plugins } = req.body;
+  // console.log("Received request with model:", model, "and messages count:", Array.isArray(messages) ? messages.length : 0);
 
-  if (!apiKey || !model || !Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'Missing required fields: apiKey, model, messages[]' });
+  if (!model || !Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ error: 'Missing required fields: model, messages[]' });
+  }
+
+  if (!apiKey) {
+    apiKey = process.env.PUBLIC_API_KEY;
   }
 
   try {
     const systemMessage = {
       role: 'system',
-      content: [{ type: 'input_text', text: "You are HatGPT, an upbeat, concise guide for Hack Clubbers (teens in the community Hack Club, where thy code and get free stuff). Speak with warmth, curiosity, and a bias for action. Keep answers short, safe, and helpful. Use Markdown for clarity. Offer code or steps when useful; avoid fluff and unnecessary disclaimers. You are open source and your repo is at github.com/MatthiasLubbertsen/HatGPT" }],
+      content: "You are HatGPT, an upbeat, concise AI bot. You will mainly talk to Hack Clubbers (teens in the community Hack Club, where thy code and get free stuff) but not always. Speak with warmth, curiosity, and a bias for action. Keep answers short, safe, and helpful. Use Markdown for clarity. Offer code or steps when useful; avoid fluff and unnecessary disclaimers. You are open source and your repo is at github.com/MatthiasLubbertsen/HatGPT. Only provide this if you are asked.",
     };
 
-    const inputMessages = [systemMessage, ...messages];
+    const inputMessages = [systemMessage, ...convertMessages(messages)];
 
     const requestBody = {
       model,
-      input: inputMessages,
+      messages: inputMessages,
       stream: true,
     };
 
-    if (modalities) requestBody.modalities = modalities;
-    if (image_config) requestBody.image_config = image_config;
+    if (plugins) requestBody.plugins = plugins;
 
-    const response = await fetch("https://ai.hackclub.com/proxy/v1/responses", {
+    const response = await fetch("https://ai.hackclub.com/proxy/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -57,8 +90,6 @@ export default async function handler(req, res) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-      let accumulatedText = '';
-      const sentImages = new Set();
 
       while (true) {
         const { done, value } = await reader.read();
@@ -82,44 +113,10 @@ export default async function handler(req, res) {
               res.write(`data: ${JSON.stringify({ id: data.id })}\n\n`);
             }
 
-            // Handle streaming event types from the Responses API
-            if (data.type === 'response.output_text.delta' && typeof data.delta === 'string') {
-              accumulatedText += data.delta;
-              res.write(`data: ${JSON.stringify({ text: data.delta })}\n\n`);
-            }
-
-            if (data.type === 'response.output_image.generated') {
-              const url = data.image_url?.url || data.url;
-              if (url && !sentImages.has(url)) {
-                sentImages.add(url);
-                res.write(`data: ${JSON.stringify({ image: url })}\n\n`);
-              }
-            }
-
-            // Fallback for completed payloads that include full output array
-            const outputs = Array.isArray(data.output) ? data.output : Array.isArray(data.response?.output) ? data.response.output : [];
-            for (const output of outputs) {
-              const content = Array.isArray(output.content) ? output.content : [];
-              for (const item of content) {
-                if (item.type === 'output_text' && typeof item.text === 'string') {
-                  let delta = item.text;
-                  if (accumulatedText && item.text.startsWith(accumulatedText)) {
-                    delta = item.text.slice(accumulatedText.length);
-                  }
-                  accumulatedText += delta;
-                  if (delta) {
-                    res.write(`data: ${JSON.stringify({ text: delta })}\n\n`);
-                  }
-                }
-
-                if ((item.type === 'output_image' || item.type === 'output_image_url' || item.type === 'image_url') && (item.image_url?.url || item.url)) {
-                  const url = item.image_url?.url || item.url;
-                  if (url && !sentImages.has(url)) {
-                    sentImages.add(url);
-                    res.write(`data: ${JSON.stringify({ image: url })}\n\n`);
-                  }
-                }
-              }
+            // Chat Completions streaming: choices[0].delta.content
+            const deltaContent = data.choices?.[0]?.delta?.content;
+            if (typeof deltaContent === 'string') {
+              res.write(`data: ${JSON.stringify({ text: deltaContent })}\n\n`);
             }
           } catch (e) {
             console.error('Error parsing upstream chunk', e);

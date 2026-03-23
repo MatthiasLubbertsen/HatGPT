@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyProfile = async () => {
         const profile = loadProfile();
         if (userStatus) {
-            userStatus.textContent = profile.apiKey ? 'API Key set' : 'API Key missing';
+            userStatus.textContent = profile.apiKey ? 'API Key set' : 'No key set, limited';
             userStatus.style.color = profile.apiKey ? '' : '#ff6b6b';
         }
         if (userNameEl) userNameEl.textContent = profile.name || 'User';

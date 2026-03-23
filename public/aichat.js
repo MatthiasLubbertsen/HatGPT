@@ -264,7 +264,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const extractTextFromMessage = (message) => {
-        if (!message || !Array.isArray(message.content)) return '';
+        if (!message) return '';
+        if (typeof message.content === 'string') return message.content;
+        if (!Array.isArray(message.content)) return '';
         const textBlock = message.content.find(c => typeof c.text === 'string');
         return textBlock?.text || '';
     };
@@ -416,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateButtonState = () => {
         const attachment = getAttachmentState();
-        const hasAttachment = !!(attachment && (attachment.status === 'uploading' || attachment.url));
+        const hasAttachment = !!(attachment && (attachment.status === 'uploading' || attachment.url || attachment.textContent));
         const blocked = !!(attachment && attachment.blockReason);
         const hasText = !!promptInput.value.trim();
         const hasLockedSnippet = !!selectionSnippet;
@@ -487,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     selectionButton = document.createElement('button');
     selectionButton.className = 'selection-action-btn';
-    selectionButton.innerHTML = '<i class="fa-solid fa-quote-right"></i><span>Ask HatGPT (hold onto your hat)</span>';
+    selectionButton.innerHTML = '<i class="fa-solid fa-quote-right"></i><span>Ask HatGPT</span>';
     selectionButton.addEventListener('click', () => {
         if (!currentSelectionText) return;
         selectionSnippet = currentSelectionText;
@@ -656,7 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
             textForAI = `${QUOTE_SYSTEM_PREFIX}"${currentSnippet}"\n\nUser: ${userText || 'Please review this selection.'}`;
         }
 
-        if (!textForAI && attachment?.url) {
+        if (!textForAI && (attachment?.url || attachment?.textContent)) {
             textForAI = 'Attached a file for you to review.';
         }
 
@@ -674,14 +676,21 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonState();
         hideSelectionPreview();
 
-        const attachmentsForMessage = attachment?.url ? [attachment] : [];
-        const contentBlocks = [{ type: 'input_text', text: textForAI }];
+        const attachmentsForMessage = (attachment?.url || attachment?.textContent) ? [attachment] : [];
+        const contentBlocks = [{ type: 'text', text: textForAI }];
         if (attachment?.url) {
             if (attachment.kind === 'image') {
-                contentBlocks.push({ type: 'input_image_url', image_url: attachment.url });
-            } else {
-                contentBlocks.push({ type: 'input_text', text: `File URL: ${attachment.url}` });
+                contentBlocks.push({ type: 'image_url', image_url: { url: attachment.url } });
+            } else if (attachment.kind === 'pdf') {
+                contentBlocks.push({ type: 'file', file: { filename: attachment.name, file_data: attachment.url } });
             }
+        } else if (attachment?.textContent) {
+            // Text/code/document file — embed content inline so any model can read it
+            const fileExt = (attachment.name || '').split('.').pop() || '';
+            contentBlocks[0] = {
+                type: 'text',
+                text: `${textForAI}\n\n[Attached file: ${attachment.name}]\n\`\`\`${fileExt}\n${attachment.textContent}\n\`\`\``
+            };
         }
 
         // Switch UI to chat mode
@@ -689,13 +698,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 1. Add User Message
         // Pass currentSnippet as the 4th argument (quote) so it renders above the bubble
-        const displayUserText = userText || (attachment?.url ? 'Sent an attachment.' : '');
+        const displayUserText = userText || (attachment?.url || attachment?.textContent ? 'Sent an attachment.' : '');
         addMessage('user', displayUserText, false, currentSnippet, attachmentsForMessage);
 
         chatHistoryState.push({ 
-            type: 'message', 
             role: 'user', 
             content: contentBlocks,
+            // attachments kept for UI re-rendering when a chat is loaded from history;
+            // the backend strips this field before forwarding to the API.
             attachments: attachmentsForMessage
         });
 
@@ -792,7 +802,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     const icon = document.createElement('div');
                     icon.className = 'file-icon';
-                    icon.innerHTML = '<i class="fa-regular fa-file"></i>';
+                    if (att.kind === 'pdf') {
+                        icon.innerHTML = '<i class="fa-regular fa-file-pdf"></i>';
+                    } else {
+                        icon.innerHTML = '<i class="fa-regular fa-file-code"></i>';
+                    }
                     chip.appendChild(icon);
                 }
 
@@ -874,15 +888,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (!apiKey) {
-            bubble.textContent = 'Please set your API Key in Settings first.';
-            return;
-        }
+        // if (!apiKey) {
+        //     bubble.textContent = 'Please set your API Key in Settings first.';
+        //     return;
+        // }
 
-        const hasImageInput = Array.isArray(lastUserMsg?.content) && lastUserMsg.content.some((c) => c.type === 'input_image_url');
+        const hasPdfInput = Array.isArray(lastUserMsg?.content) && lastUserMsg.content.some((c) => c.type === 'file');
         const requestPayload = { apiKey, model, messages: chatHistoryState };
-        if (hasImageInput) {
-            requestPayload.modalities = ['text', 'image'];
+        if (hasPdfInput) {
+            requestPayload.plugins = [{ id: 'file-parser', pdf: { engine: 'native' } }];
         }
 
         try {
@@ -954,11 +968,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 bubble.textContent = "No response from AI.";
             } else {
                 chatHistoryState.push({
-                   type: 'message',
                    role: 'assistant',
-                   id: messageId || `msg_${Date.now()}`,
-                   status: 'completed',
-                   content: [{ type: 'output_text', text: fullText, annotations: [] }]
+                   content: fullText
                 });
                 saveCurrentChat();
             }

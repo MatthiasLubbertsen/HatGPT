@@ -108,7 +108,7 @@
                     <div class="switch-row">
                         <div class="switch-copy">
                             <div class="switch-title">Use Gravatar</div>
-                            <div class="switch-hint">When on, enter your Gravatar email below.</div>
+                            <div class="switch-hint">enter your Gravatar email below.</div>
                         </div>
                         <label class="toggle-switch" for="useGravatarInput">
                             <input id="useGravatarInput" name="useGravatar" type="checkbox">
@@ -119,7 +119,7 @@
                 <div class="form-group">
                     <label for="avatarInput" class="label-with-icon">
                         <span id="avatarLabelText">Profile picture URL / Gravatar email</span>
-                        <i id="avatarWarning" class="warning-icon fa-solid fa-triangle-exclamation" data-tooltip="Avatar could not be loaded"></i>
+                        <i id="avatarWarning" class="warning-icon fa-solid fa-triangle-exclamation" title="Avatar could not be loaded"></i>
                     </label>
                     <input id="avatarInput" name="avatar" type="text" class="input-field"
                         placeholder="https://example.com/avatar.png">
@@ -128,6 +128,7 @@
                     <label for="apiKeyInput">API key</label>
                     <input id="apiKeyInput" name="apiKey" type="password" class="input-field"
                         placeholder="Enter your API key">
+                    <div class="switch-hint">if you dont have one, dont enter one, it uses the public. But its rate limited.</div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="modal-button secondary" id="settingsCancel">Cancel</button>
