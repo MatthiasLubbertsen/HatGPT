@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const avatarInput = document.getElementById('avatarInput');
     const avatarLabelText = document.getElementById('avatarLabelText');
     const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+    const MOBILE_BREAKPOINT = 768;
+    let sidebarResizeDebounceTimeout;
 
     const isBotBusy = () => Boolean(window.hatgptBotBusy);
     const getAttachmentState = () => (typeof window.getHatAttachmentState === 'function'
@@ -360,6 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const closeMobileSidebar = () => {
         document.body.classList.remove('sidebar-open');
+        document.body.setAttribute('aria-expanded', 'false');
         if (mobileSidebarToggle) {
             mobileSidebarToggle.setAttribute('aria-expanded', 'false');
         }
@@ -367,6 +370,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const toggleMobileSidebar = () => {
         document.body.classList.toggle('sidebar-open');
+        document.body.setAttribute(
+            'aria-expanded',
+            document.body.classList.contains('sidebar-open') ? 'true' : 'false'
+        );
         if (mobileSidebarToggle) {
             mobileSidebarToggle.setAttribute(
                 'aria-expanded',
@@ -380,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         const target = e.target;
         if (!(target instanceof Element)) return;
-        if (window.innerWidth > 768) return;
+        if (window.innerWidth > MOBILE_BREAKPOINT) return;
         if (target.closest('.sidebar') || target.closest('#mobileSidebarToggle')) return;
         if (document.body.classList.contains('sidebar-open')) {
             closeMobileSidebar();
@@ -388,9 +395,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) {
-            closeMobileSidebar();
-        }
+        clearTimeout(sidebarResizeDebounceTimeout);
+        sidebarResizeDebounceTimeout = setTimeout(() => {
+            if (window.innerWidth > MOBILE_BREAKPOINT) {
+                closeMobileSidebar();
+            }
+        }, 120);
     });
 
     // Check service status
