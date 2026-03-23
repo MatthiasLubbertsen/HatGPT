@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nameInput = document.getElementById('userNameInput');
     const avatarInput = document.getElementById('avatarInput');
     const avatarLabelText = document.getElementById('avatarLabelText');
+    const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
 
     const isBotBusy = () => Boolean(window.hatgptBotBusy);
     const getAttachmentState = () => (typeof window.getHatAttachmentState === 'function'
@@ -356,6 +357,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Autofocus on load
     promptInput?.focus();
+
+    const closeMobileSidebar = () => {
+        document.body.classList.remove('sidebar-open');
+        if (mobileSidebarToggle) {
+            mobileSidebarToggle.setAttribute('aria-expanded', 'false');
+        }
+    };
+
+    const toggleMobileSidebar = () => {
+        document.body.classList.toggle('sidebar-open');
+        if (mobileSidebarToggle) {
+            mobileSidebarToggle.setAttribute(
+                'aria-expanded',
+                document.body.classList.contains('sidebar-open') ? 'true' : 'false'
+            );
+        }
+    };
+
+    mobileSidebarToggle?.addEventListener('click', toggleMobileSidebar);
+
+    document.addEventListener('click', (e) => {
+        const target = e.target;
+        if (!(target instanceof Element)) return;
+        if (window.innerWidth > 768) return;
+        if (target.closest('.sidebar') || target.closest('#mobileSidebarToggle')) return;
+        if (document.body.classList.contains('sidebar-open')) {
+            closeMobileSidebar();
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeMobileSidebar();
+        }
+    });
 
     // Check service status
     fetch('/api/status')
