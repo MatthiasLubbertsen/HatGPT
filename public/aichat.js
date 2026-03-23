@@ -489,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     selectionButton = document.createElement('button');
     selectionButton.className = 'selection-action-btn';
-    selectionButton.innerHTML = '<i class="fa-solid fa-quote-right"></i><span>Ask HatGPT (hold onto your hat)</span>';
+    selectionButton.innerHTML = '<i class="fa-solid fa-quote-right"></i><span>Ask HatGPT</span>';
     selectionButton.addEventListener('click', () => {
         if (!currentSelectionText) return;
         selectionSnippet = currentSelectionText;
@@ -888,10 +888,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (!apiKey) {
-            bubble.textContent = 'Please set your API Key in Settings first.';
-            return;
-        }
+        // if (!apiKey) {
+        //     bubble.textContent = 'Please set your API Key in Settings first.';
+        //     return;
+        // }
 
         const hasPdfInput = Array.isArray(lastUserMsg?.content) && lastUserMsg.content.some((c) => c.type === 'file');
         const requestPayload = { apiKey, model, messages: chatHistoryState };
