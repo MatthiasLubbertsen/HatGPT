@@ -54,6 +54,7 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 - [x] title generation
 - [x] attachments
 - [x] HackAI status
+- [ ] rate limit for public key (2 per minute?)
 - [ ] title generation with public key
 - [ ] test image upload
 - [ ] test file upload
