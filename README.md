@@ -5,7 +5,7 @@
 ![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fhackatime-project-stats.matthiaslubbertsen.workers.dev%2F%3FuserID%3DU0A55A4B21K%26projects%3DHatGPT%2CAI-Interface&query=total_hms&style=for-the-badge&label=Hackatime&color=ffd000)
 
 ## whats this?
-a chatgpt.com ui clone! :yay: free using [HackAI](https://ai.hackclub.com), open source and idk what more
+a chatgpt.com ui clone! ![yay](https://wsrv.nl/?url=https://emoji.slack-edge.com/T09V59WQY1E/yay/47296c029c8ee253.gif&w=16&h=16) free using [HackAI](https://ai.hackclub.com), open source and idk what more
 
 ## features
 * usable without key
@@ -23,7 +23,10 @@ a chatgpt.com ui clone! :yay: free using [HackAI](https://ai.hackclub.com), open
 ## getting started
 
 ### easiest way
-Deploy to vercel!
+use the hosted version by me! [hatgpt.vercel.app](https://hatgpt.vercel.app/)
+
+### self host easy way
+deploy to vercel!
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMatthiasLubbertsen%2FHatGPT&env=PUBLIC_API_KEY&envDefaults=%7B%22PUBLIC_API_KEY%22%3A%22add%20your%20HackAI%20key%20for%20public%20access%20here%22%7D&project-name=hatgpt&repository-name=hatgpt&demo-title=HatGPT&demo-description=Simple%20ChatGPT%20ui%20clone%20with%20HackAI%20as%20free%20api!&demo-url=https%3A%2F%2Fhatgpt.vercel.app&demo-image=https%3A%2F%2Fraw.githubusercontent.com%2FMatthiasLubbertsen%2FHatGPT%2Frefs%2Fheads%2Fmain%2Fpublic%2Fshots_so%2Fv4%2520-%252031-3.png)
 
@@ -60,3 +63,4 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 - [ ] test file upload
 - [ ] test image generation
 - [ ] phone view top bar styling
+- [ ] phone view sidebar > settings close it
