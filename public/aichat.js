@@ -343,7 +343,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateTitleForChat = async (chatId, prompt) => {
         if (!prompt || pendingTitleRequests.has(chatId)) return;
         const apiKey = localStorage.getItem('apiKey');
-        if (!apiKey) return;
 
         const chat = chats.find(c => c.id === chatId);
         if (!chat || (chat.title && chat.title !== 'New chat')) return;

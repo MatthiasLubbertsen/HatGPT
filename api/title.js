@@ -3,11 +3,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { apiKey, prompt } = req.body;
+  let { apiKey, prompt } = req.body;
   console.log("Received request with  prompt:", prompt);
 
-  if (!apiKey || !prompt) {
-    return res.status(400).json({ error: 'Missing required fields: apiKey, prompt' });
+  if (!prompt) {
+    return res.status(400).json({ error: 'Missing prompt' });
+  }
+
+  if (!apiKey) {
+    apiKey = process.env.PUBLIC_API_KEY;
   }
 
   try {
