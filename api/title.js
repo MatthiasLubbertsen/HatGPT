@@ -1,3 +1,8 @@
+import { enforceRateLimit } from './_rateLimit.js';
+
+const TITLE_PUBLIC_KEY_LIMIT = Number(process.env.PUBLIC_KEY_RATE_LIMIT_TITLE || 30);
+const TITLE_PUBLIC_KEY_WINDOW_MS = Number(process.env.PUBLIC_KEY_RATE_LIMIT_TITLE_WINDOW_MS || 60_000);
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -10,8 +15,33 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing prompt' });
   }
 
-  if (!apiKey) {
-    apiKey = process.env.PUBLIC_API_KEY;
+  const userApiKey = typeof apiKey === 'string' ? apiKey.trim() : '';
+  const publicApiKey = process.env.PUBLIC_API_KEY;
+  const effectiveApiKey = userApiKey || publicApiKey;
+
+  if (!effectiveApiKey) {
+    return res.status(400).json({ error: 'Missing API key and PUBLIC_API_KEY is not configured' });
+  }
+
+  const usingPublicKey = !userApiKey || effectiveApiKey === publicApiKey;
+  if (usingPublicKey) {
+    const rate = enforceRateLimit(req, res, {
+      routeKey: 'title-public',
+      limit: TITLE_PUBLIC_KEY_LIMIT,
+      windowMs: TITLE_PUBLIC_KEY_WINDOW_MS,
+    });
+
+    res.setHeader('X-RateLimit-Limit', String(rate.limit));
+    res.setHeader('X-RateLimit-Remaining', String(rate.remaining));
+    res.setHeader('X-RateLimit-Window-Ms', String(rate.windowMs));
+
+    if (!rate.allowed) {
+      res.setHeader('Retry-After', String(rate.retryAfterSec));
+      return res.status(429).json({
+        error: 'Rate limit exceeded for public key usage',
+        retryAfterSec: rate.retryAfterSec,
+      });
+    }
   }
 
   try {
@@ -28,7 +58,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        "Authorization": `Bearer ${effectiveApiKey}`
       },
       body: JSON.stringify(requestBody)
     });

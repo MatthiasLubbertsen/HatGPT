@@ -1,4 +1,8 @@
 import 'dotenv/config';
+import { enforceRateLimit } from './_rateLimit.js';
+
+const AI_PUBLIC_KEY_LIMIT = Number(process.env.PUBLIC_KEY_RATE_LIMIT_AI || 10);
+const AI_PUBLIC_KEY_WINDOW_MS = Number(process.env.PUBLIC_KEY_RATE_LIMIT_AI_WINDOW_MS || 60_000);
 
 // Convert internal message format to Chat Completions API format
 function convertMessages(messages) {
@@ -40,8 +44,33 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields: model, messages[]' });
   }
 
-  if (!apiKey) {
-    apiKey = process.env.PUBLIC_API_KEY;
+  const userApiKey = typeof apiKey === 'string' ? apiKey.trim() : '';
+  const publicApiKey = process.env.PUBLIC_API_KEY;
+  const effectiveApiKey = userApiKey || publicApiKey;
+
+  if (!effectiveApiKey) {
+    return res.status(400).json({ error: 'Missing API key and PUBLIC_API_KEY is not configured' });
+  }
+
+  const usingPublicKey = !userApiKey || effectiveApiKey === publicApiKey;
+  if (usingPublicKey) {
+    const rate = enforceRateLimit(req, res, {
+      routeKey: 'ai-public',
+      limit: AI_PUBLIC_KEY_LIMIT,
+      windowMs: AI_PUBLIC_KEY_WINDOW_MS,
+    });
+
+    res.setHeader('X-RateLimit-Limit', String(rate.limit));
+    res.setHeader('X-RateLimit-Remaining', String(rate.remaining));
+    res.setHeader('X-RateLimit-Window-Ms', String(rate.windowMs));
+
+    if (!rate.allowed) {
+      res.setHeader('Retry-After', String(rate.retryAfterSec));
+      return res.status(429).json({
+        error: 'Rate limit exceeded for public key usage',
+        retryAfterSec: rate.retryAfterSec,
+      });
+    }
   }
 
   try {
@@ -64,7 +93,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        "Authorization": `Bearer ${effectiveApiKey}`
       },
       body: JSON.stringify(requestBody)
     });
