@@ -64,3 +64,26 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 - [ ] test image generation
 - [ ] phone view top bar styling
 - [ ] phone view sidebar > settings close it
+
+<summary>
+<description>AI declaration</description>
+## I made almost all of the chatgpt.com ui clone myself, and i got tired of the project bc there were so many things to fix. so i used ai to help me with the rest wich is declared here (grabbed from my chats):
+* textarea resizing when more than 1 line
+* model dropdown functionality
+* chat functionality
+* dynamic script loading
+* saving api key to local storage
+* simplifying SSE code
+* implementing chat history
+* chat savings and title generation
+* ui enhancements for api key modal
+* search chats
+* blinking dot
+* gravatar pfp
+* scroll behavior
+* helping with system prompt
+* selected text
+* file upload
+* title with public key
+* rate limiting
+</summary>
