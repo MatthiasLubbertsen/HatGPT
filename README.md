@@ -65,8 +65,8 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 - [ ] phone view top bar styling
 - [ ] phone view sidebar > settings close it
 
-<summary>
-<description>AI declaration</description>
+<details>
+<summary>AI declaration</summary>
 ## I made almost all of the chatgpt.com ui clone myself, and i got tired of the project bc there were so many things to fix. so i used ai to help me with the rest wich is declared here (grabbed from my chats):
 * textarea resizing when more than 1 line
 * model dropdown functionality
@@ -86,4 +86,4 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 * file upload
 * title with public key
 * rate limiting
-</summary>
+</details>
