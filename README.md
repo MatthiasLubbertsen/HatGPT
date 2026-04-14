@@ -67,7 +67,11 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 
 <details>
 <summary>AI declaration</summary>
-## I made almost all of the chatgpt.com ui clone myself, and i got tired of the project bc there were so many things to fix. so i used ai to help me with the rest wich is declared here (grabbed from my chats):
+  
+### I made almost all of the chatgpt.com ui clone myself
+#### and i got tired of the project bc there were so many things to fix
+so i used ai to help me with the rest wich is declared here (grabbed from my chats):
+
 * textarea resizing when more than 1 line
 * model dropdown functionality
 * chat functionality
