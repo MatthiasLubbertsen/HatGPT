@@ -76,6 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetId = window.currentModel || currentModelId;
         const model = models.find(m => m.id === targetId);
         if (!model) return false;
+
+        // Check flat modality fields
         const modalities = model.modalities || model.capabilities || model.supported_modalities || model.supports;
         if (Array.isArray(modalities)) {
             const lowered = modalities.map(m => String(m).toLowerCase());
@@ -83,6 +85,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 return true;
             }
         }
+
+        // Check OpenRouter-style architecture.modality string (e.g. "text+image->text")
+        const archModality = model.architecture?.modality;
+        if (typeof archModality === 'string') {
+            const inputPart = archModality.split('->')[0] || archModality;
+            if (/image/i.test(inputPart)) return true;
+        }
+
+        // Check OpenRouter-style architecture.input_modalities array
+        const inputModalities = model.architecture?.input_modalities;
+        if (Array.isArray(inputModalities)) {
+            const lowered = inputModalities.map(m => String(m).toLowerCase());
+            if (lowered.includes('image') || lowered.includes('images') || lowered.includes('vision')) {
+                return true;
+            }
+        }
+
         if (typeof model.description === 'string' && /vision|image/i.test(model.description)) {
             return true;
         }
