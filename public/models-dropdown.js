@@ -194,12 +194,14 @@ function initModelDropdown() {
         }
     }
 
-    // Initialize with first available if random placeholder is there, or keep placeholder
+    // Initialize with preferred default model for first-time users, then fallback to first available.
     if (!initialModel && availableModels.length > 0) {
-        // Try to respect current if it makes sense or pick first
+        const preferredDefaultModelId = 'moonshotai/kimi-k2.5';
+        const preferredModel = availableModels.find(m => m.id === preferredDefaultModelId);
         const firstModel = availableModels[0];
-        initialModel = firstModel;
-        initialFriendlyName = firstModel.name;
+
+        initialModel = preferredModel || firstModel;
+        initialFriendlyName = initialModel.name;
         if (initialFriendlyName.includes(':')) initialFriendlyName = initialFriendlyName.split(':').slice(1).join(':').trim();
     }
 
