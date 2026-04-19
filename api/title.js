@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   let { apiKey, prompt } = req.body;
-  console.log("Received request with  prompt:", prompt);
+  // console.log("Received request with prompt:", prompt);
 
   if (!prompt) {
     return res.status(400).json({ error: 'Missing prompt' });
