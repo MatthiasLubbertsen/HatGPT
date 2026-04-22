@@ -47,7 +47,7 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 # serverless api endpoints
 * `api/ai` - SSE proxy with some cleanup
 * `api/title` - title generation w/ first message as input
-* `api/upload` - uploading file to bucky
+* ~~`api/upload` - uploading file to bucky~~ - removed this due to the lack of time ![pf](https://wsrv.nl/?url=https://emoji.slack-edge.com/T09V59WQY1E/pf/d2b4e41a039d2ec2.png&w=16&h=16)
 * `api/status` - HackAI models
 * `api/models` - proxy to HackAI models
 
@@ -59,8 +59,8 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 - [x] HackAI status
 - [x] rate limit for public key (2 per minute?)
 - [x] title generation with public key
-- [ ] test image upload
-- [ ] test file upload
+- [x] test image upload - end up removing it
+- [x] test file upload - same as above
 - [ ] test image generation
 - [ ] phone view top bar styling
 - [ ] phone view sidebar > settings close it
@@ -90,4 +90,5 @@ so i used ai to help me with the rest wich is declared here (grabbed from my cha
 * file upload
 * title with public key
 * rate limiting
+* removing image upload
 </details>
