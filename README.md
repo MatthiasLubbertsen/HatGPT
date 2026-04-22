@@ -33,7 +33,7 @@ deploy to vercel!
 ### run locally
 1. clone the repo (duh)
 2. install with `npm install`
-3. create a `.env` file with your [HackAI](https://ai.hackclub.com/keys) token as `PUBLIC_API_KEY` (for public usage)
+3. `cp .env.example .env` and add your [HackAI](https://ai.hackclub.com/keys) token as `PUBLIC_API_KEY` (for public usage)
 4. run the app with `npm start`
 5. open `http://localhost:3000` and start chatting
 
