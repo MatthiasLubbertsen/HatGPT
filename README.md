@@ -64,6 +64,7 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 - [ ] test image generation
 - [ ] phone view top bar styling
 - [ ] phone view sidebar > settings close it
+- [ ] center 'Ask anything' text
 
 <details>
 <summary>AI declaration</summary>
