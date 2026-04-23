@@ -283,12 +283,21 @@ body {
     padding: 10px 16px;
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
+    align-items: center;
     box-shadow: 0px 4px 12px 0px #0000001a,inset 0px 0px 1px 0px #fff3;
     gap: 10px;
     margin: 0 auto;
     position: relative;
-    padding-top: 6px;
+}
+
+.chat-input-note {
+    width: min(90%, var(--content-max-width));
+    margin: 10px auto 0;
+    text-align: center;
+    color: #ffffff;
+    font-size: 0.7rem;
+    line-height: 1.3;
+    display: none;
 }
 
 .chat-input {
@@ -303,7 +312,7 @@ body {
     font-family: inherit;
     line-height: 1.5;
     padding: 0;
-    margin-bottom: 8px; /* Align with buttons visually if needed, or maybe not */
+    margin-bottom: 0;
 }
 
 .selection-preview {
@@ -963,7 +972,11 @@ body.chat-mode .content-wrapper {
 
 body.chat-mode .chat-input-container {
     margin-top: auto;
-    margin-bottom: 20px;
+}
+
+body.chat-mode .chat-input-note {
+    display: block;
+    margin-bottom: 10px;
 }
 
 .message-row {
@@ -1491,6 +1504,13 @@ body.chat-mode .chat-input-container {
         width: 100%;
         border-radius: 20px;
         padding: 8px 12px;
+    }
+
+    .chat-input-note {
+        width: 100%;
+        font-size: 0.82rem;
+        margin-top: 8px;
+        padding: 0 4px;
     }
 
     .message-bubble,
