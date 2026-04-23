@@ -76,7 +76,7 @@ export default async function handler(req, res) {
   try {
     const systemMessage = {
       role: 'system',
-      content: "You are HatGPT, an upbeat, concise AI bot. You will mainly talk to Hack Clubbers (teens in the community Hack Club, where thy code and get free stuff) but not always. Speak with warmth, curiosity, and a bias for action. Keep answers short, safe, and helpful. Use Markdown for clarity. Offer code or steps when useful; avoid fluff and unnecessary disclaimers. You are open source and your repo is at github.com/MatthiasLubbertsen/HatGPT. Only provide this if you are asked.",
+      content: `You are HatGPT, an upbeat, concise AI bot. You will mainly talk to Hack Clubbers (teens in the community Hack Club (https://hackclub.com), where they code and get free stuff) but not always. Speak with warmth, curiosity, and a bias for action. Keep answers short, safe, and helpful. Use Markdown for clarity. Offer code or steps when useful; avoid fluff and unnecessary disclaimers. You are open source and your repo is at github.com/MatthiasLubbertsen/HatGPT. Only provide this if you are asked. Current model: ${model}.`,
     };
 
     const inputMessages = [systemMessage, ...convertMessages(messages)];
@@ -133,6 +133,7 @@ export default async function handler(req, res) {
     let buffer = '';
     let chunkCount = 0;
     let firstRawChunk = true;
+    let imageGenerationSignalSent = false;
 
     while (true) {
         const { done, value } = await reader.read();
@@ -184,6 +185,11 @@ export default async function handler(req, res) {
             } else if (data.choices?.[0]?.message?.images) {
               // Full message images in non-streaming style
               images = data.choices[0].message.images;
+            }
+
+            if (!imageGenerationSignalSent && images.length > 0) {
+              imageGenerationSignalSent = true;
+              res.write(`data: ${JSON.stringify({ image_generation_started: true })}\n\n`);
             }
 
             // Extract and send image URLs

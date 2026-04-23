@@ -61,7 +61,7 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 - [x] title generation with public key
 - [x] test image upload - end up removing it
 - [x] test file upload - same as above
-- [ ] test image generation
+- [x] test image generation
 - [ ] phone view top bar styling
 - [ ] phone view sidebar > settings close it
 - [ ] center 'Ask anything' text
@@ -93,4 +93,5 @@ so i used ai to help me with the rest wich is declared here (grabbed from my cha
 * rate limiting
 * removing image upload
 * image generation deletion
+* image generation style fix
 </details>

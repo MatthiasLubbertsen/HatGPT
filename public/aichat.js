@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchResults = document.getElementById('chatSearchResults');
 
     const STORAGE_KEY = 'hatgpt_chats';
+    const IMAGE_DB_NAME = 'hatgpt_image_assets';
+    const IMAGE_DB_VERSION = 1;
+    const IMAGE_STORE_NAME = 'images';
+    const IMAGE_REF_PREFIX = 'idb-image:';
     const MAX_TITLE_LENGTH = 60;
     const pendingTitleRequests = new Set();
     const SCROLL_LOCK_THRESHOLD = 48;
@@ -37,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectionPreviewBody = null;
     let selectionSnippet = '';
     let currentSelectionText = '';
+    let chatLoadToken = 0;
+
+    const imageDataUrlToId = new Map();
 
     window.hatgptBotBusy = false;
 
@@ -47,6 +54,133 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Failed to parse stored chats', err);
             return null;
         }
+    };
+
+    const isDataUrlImage = (url) => typeof url === 'string' && url.startsWith('data:image/');
+
+    const isImageRef = (url) => typeof url === 'string' && url.startsWith(IMAGE_REF_PREFIX);
+
+    const imageRefFromId = (id) => `${IMAGE_REF_PREFIX}${id}`;
+
+    const imageIdFromRef = (ref) => ref.slice(IMAGE_REF_PREFIX.length);
+
+    const openImageDb = (() => {
+        let dbPromise = null;
+
+        return () => {
+            if (!('indexedDB' in window)) return Promise.resolve(null);
+            if (dbPromise) return dbPromise;
+
+            dbPromise = new Promise((resolve, reject) => {
+                const request = indexedDB.open(IMAGE_DB_NAME, IMAGE_DB_VERSION);
+
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(IMAGE_STORE_NAME)) {
+                        db.createObjectStore(IMAGE_STORE_NAME);
+                    }
+                };
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error('Failed to open image database'));
+            }).catch((err) => {
+                console.warn('IndexedDB unavailable for image persistence', err);
+                return null;
+            });
+
+            return dbPromise;
+        };
+    })();
+
+    const putImageAsset = async (assetId, dataUrl) => {
+        const db = await openImageDb();
+        if (!db) return false;
+
+        return new Promise((resolve) => {
+            const tx = db.transaction(IMAGE_STORE_NAME, 'readwrite');
+            const store = tx.objectStore(IMAGE_STORE_NAME);
+            store.put(dataUrl, assetId);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => {
+                console.warn('Failed writing image asset to IndexedDB', tx.error);
+                resolve(false);
+            };
+        });
+    };
+
+    const getImageAsset = async (assetId) => {
+        const db = await openImageDb();
+        if (!db) return null;
+
+        return new Promise((resolve) => {
+            const tx = db.transaction(IMAGE_STORE_NAME, 'readonly');
+            const store = tx.objectStore(IMAGE_STORE_NAME);
+            const req = store.get(assetId);
+            req.onsuccess = () => resolve(typeof req.result === 'string' ? req.result : null);
+            req.onerror = () => {
+                console.warn('Failed reading image asset from IndexedDB', req.error);
+                resolve(null);
+            };
+        });
+    };
+
+    const generateImageAssetId = () => `img_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
+    const convertImageUrlForStorage = async (imageUrl) => {
+        if (!isDataUrlImage(imageUrl)) return imageUrl;
+
+        let assetId = imageDataUrlToId.get(imageUrl);
+        if (!assetId) {
+            assetId = generateImageAssetId();
+            const saved = await putImageAsset(assetId, imageUrl);
+            if (!saved) return null;
+            imageDataUrlToId.set(imageUrl, assetId);
+        }
+
+        return imageRefFromId(assetId);
+    };
+
+    const resolveImageUrlForRender = async (imageUrl) => {
+        if (!isImageRef(imageUrl)) return imageUrl;
+        const assetId = imageIdFromRef(imageUrl);
+        if (!assetId) return null;
+        return getImageAsset(assetId);
+    };
+
+    const sanitizeChatsForStorage = async (sourceChats) => {
+        const mappedChats = await Promise.all(sourceChats.map(async (chat) => ({
+            ...chat,
+            messages: await Promise.all((Array.isArray(chat.messages) ? chat.messages : []).map(async (message) => {
+                if (!Array.isArray(message.images) || message.images.length === 0) {
+                    return message;
+                }
+
+                const convertedImages = (await Promise.all(
+                    message.images.map((imageUrl) => convertImageUrlForStorage(imageUrl))
+                )).filter(Boolean);
+
+                return {
+                    ...message,
+                    images: convertedImages,
+                };
+            })),
+        })));
+
+        return mappedChats;
+    };
+
+    const getActiveModelId = () => {
+        if (window.currentModel) {
+            return window.currentModel;
+        }
+
+        const modelNameEl = document.querySelector('.model-name');
+        if (modelNameEl && typeof availableModels !== 'undefined') {
+            const found = availableModels.find(m => m.name === modelNameEl.textContent.trim());
+            if (found) return found.id;
+        }
+
+        return 'openai/gpt-4o';
     };
 
     const loadSavedChats = () => {
@@ -64,8 +198,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }));
     };
 
-    const persistChats = () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+    const persistChats = async () => {
+        try {
+            const serializableChats = await sanitizeChatsForStorage(chats);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(serializableChats));
+        } catch (err) {
+            console.warn('Failed to persist chats to localStorage', err);
+        }
     };
 
     const getUsableChats = () => {
@@ -114,7 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (updatedTime) {
                 item.title = new Date(updatedTime).toLocaleString();
             }
-            item.addEventListener('click', () => loadChat(chat.id));
+            item.addEventListener('click', () => {
+                void loadChat(chat.id);
+            });
             chatList.appendChild(item);
         });
     };
@@ -178,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (snippetDiv) item.appendChild(snippetDiv);
 
             item.addEventListener('click', () => {
-                loadChat(chat.id);
+                void loadChat(chat.id);
                 closeSearch({ clearValue: false });
             });
 
@@ -276,7 +417,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return '';
     };
 
-    const loadChat = (chatId) => {
+    const loadChat = async (chatId) => {
+        const thisLoadToken = ++chatLoadToken;
         const chat = chats.find(c => c.id === chatId);
         if (!chat) return;
         currentChatId = chatId;
@@ -292,10 +434,17 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.remove('chat-mode');
         }
 
-        chatHistoryState.forEach((message, idx) => {
+        for (let idx = 0; idx < chatHistoryState.length; idx += 1) {
+            const message = chatHistoryState[idx];
             const role = message.role === 'assistant' ? 'ai' : 'user';
             const text = extractTextFromMessage(message);
-            const images = message.images || [];
+            const images = Array.isArray(message.images)
+                ? (await Promise.all(message.images.map(resolveImageUrlForRender))).filter(Boolean)
+                : [];
+
+            if (thisLoadToken !== chatLoadToken || currentChatId !== chatId) {
+                return;
+            }
             
             let displayText = text;
             let displayQuote = null;
@@ -321,7 +470,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderMath(ui.bubble);
                 addAiActions(ui.row, findPreviousUserPrompt(chatHistoryState, idx));
             }
-        });
+        }
+
+        if (thisLoadToken !== chatLoadToken || currentChatId !== chatId) {
+            return;
+        }
 
         autoScroll = true;
         chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -681,11 +834,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 2. Add AI Loading Placeholder
+        const activeModel = getActiveModelId();
         const aiUi = addMessage('ai', '', true);
 
         // 3. API Call
         try {
-            await fetchAIResponse(aiUi);
+            await fetchAIResponse(aiUi, activeModel);
         } finally {
             setBotBusy(false);
             updateButtonState();
@@ -720,7 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Message Handling
-    function addMessage(role, text, isLoading = false, quote = null, images = []) {
+    function addMessage(role, text, isLoading = false, quote = null, images = [], loadingType = 'text') {
         const row = document.createElement('div');
         row.className = `message-row ${role}-message-row`;
         
@@ -739,12 +893,25 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (role === 'ai') {
             if (isLoading) {
-                bubble.innerHTML = `
-                    <div class="typing-indicator">
-                        <div class="typing-dot-single"></div>
-                    </div>`;
+                if (loadingType === 'image') {
+                    bubble.classList.add('ai-image-loading-bubble');
+                    bubble.innerHTML = `
+                        <div class="image-loading-card" role="status" aria-live="polite">
+                            <div class="image-loading-title">Generating image...</div>
+                            <div class="image-loading-grid" aria-hidden="true"></div>
+                        </div>`;
+                } else {
+                    bubble.innerHTML = `
+                        <div class="typing-indicator">
+                            <div class="typing-dot-single"></div>
+                        </div>`;
+                }
             } else {
-                bubble.innerHTML = renderMarkdown(text);
+                if (Array.isArray(images) && images.length > 0) {
+                    bubble.innerHTML = '';
+                } else {
+                    bubble.innerHTML = renderMarkdown(text);
+                }
             }
         } else {
             bubble.textContent = text;
@@ -752,12 +919,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add images if present
         if (Array.isArray(images) && images.length > 0) {
+            bubble.classList.add('ai-image-result');
             for (const imageUrl of images) {
-                const img = document.createElement('img');
-                img.src = imageUrl;
-                img.style.maxWidth = '100%';
-                img.style.marginTop = '8px';
-                bubble.appendChild(img);
+                bubble.appendChild(createGeneratedImageTile(imageUrl));
+            }
+
+            if (role === 'ai' && text && text.trim()) {
+                appendImageCaption(bubble, text);
             }
         }
 
@@ -780,6 +948,128 @@ document.addEventListener('DOMContentLoaded', () => {
         return marked.parse(text);
     }
 
+    function renderImageLoadingCard(bubble) {
+        bubble.classList.add('ai-image-loading-bubble');
+        bubble.innerHTML = `
+            <div class="image-loading-card" role="status" aria-live="polite">
+                <div class="image-loading-title">Generating image...</div>
+                <div class="image-loading-grid" aria-hidden="true"></div>
+            </div>`;
+    }
+
+    const getImageFileExtension = (url) => {
+        if (isDataUrlImage(url)) {
+            const mimeMatch = url.match(/^data:image\/([a-zA-Z0-9.+-]+);/);
+            if (mimeMatch?.[1]) {
+                const type = mimeMatch[1].toLowerCase();
+                if (type === 'jpeg') return 'jpg';
+                return type;
+            }
+            return 'png';
+        }
+
+        try {
+            const parsed = new URL(url, window.location.href);
+            const pathname = parsed.pathname || '';
+            const extMatch = pathname.match(/\.([a-zA-Z0-9]+)$/);
+            return extMatch?.[1]?.toLowerCase() || 'png';
+        } catch {
+            return 'png';
+        }
+    };
+
+    const buildImageFilename = (url) => {
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+        const ext = getImageFileExtension(url);
+        return `hatgpt-image-${timestamp}.${ext}`;
+    };
+
+    const triggerImageDownload = async (imageUrl) => {
+        const filename = buildImageFilename(imageUrl);
+
+        if (isDataUrlImage(imageUrl)) {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            return;
+        }
+
+        try {
+            const response = await fetch(imageUrl);
+            if (!response.ok) throw new Error('Image fetch failed');
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(objectUrl);
+        } catch (err) {
+            console.warn('Falling back to direct image open for download', err);
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+    };
+
+    function createGeneratedImageTile(imageUrl, animateIn = false) {
+        const wrap = document.createElement('div');
+        wrap.className = 'generated-image-wrap';
+
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.className = 'generated-image';
+        img.loading = 'lazy';
+        img.alt = 'Generated image';
+
+        const downloadBtn = document.createElement('button');
+        downloadBtn.type = 'button';
+        downloadBtn.className = 'image-download-btn';
+        downloadBtn.textContent = 'Download';
+        downloadBtn.addEventListener('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            await triggerImageDownload(imageUrl);
+        });
+
+        wrap.appendChild(img);
+        wrap.appendChild(downloadBtn);
+
+        if (animateIn) {
+            requestAnimationFrame(() => img.classList.add('is-visible'));
+        } else {
+            img.classList.add('is-visible');
+        }
+
+        return wrap;
+    }
+
+    function appendImageCaption(bubble, text) {
+        const captionText = (text || '').trim();
+        if (!captionText) return;
+
+        const existingCaption = bubble.querySelector('.generated-image-caption');
+        if (existingCaption) {
+            existingCaption.remove();
+        }
+
+        const caption = document.createElement('div');
+        caption.className = 'generated-image-caption markdown-content';
+        caption.innerHTML = renderMarkdown(captionText);
+        bubble.appendChild(caption);
+        renderMath(caption);
+    }
+
     function renderMath(element) {
         if (window.renderMathInElement) {
             renderMathInElement(element, {
@@ -794,30 +1084,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function fetchAIResponse(uiElements) {
+    async function fetchAIResponse(uiElements, activeModelId) {
         const { bubble, row } = uiElements;
         const lastUserMsg = chatHistoryState[chatHistoryState.length - 1];
         const prompt = lastUserMsg.content[0].text;
         
         const apiKey = localStorage.getItem('apiKey');
-        let model = 'openai/gpt-4o'; // Fallback
-        
-        // Determine model
-        if (window.currentModel) {
-            model = window.currentModel;
-        } else {
-            // Try reading DOM
-            const modelNameEl = document.querySelector('.model-name');
-            if (modelNameEl) {
-                // Try to map friendly name back to ID? 
-                // For now, if we don't have the ID, we might default or try to get it from `availableModels` global in models-dropdown
-                // Accessing global availableModels
-                if (typeof availableModels !== 'undefined') {
-                    const found = availableModels.find(m => m.name === modelNameEl.textContent.trim()); // heuristic match
-                    if (found) model = found.id;
-                }
-            }
-        }
+        const model = activeModelId || getActiveModelId();
 
         // if (!apiKey) {
         //     bubble.textContent = 'Please set your API Key in Settings first.';
@@ -867,6 +1140,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let firstChunk = true;
             let chunkCount = 0;
             let rawDataReceived = '';
+            let imageGenerationStarted = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -892,22 +1166,38 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (data.id) {
                                 messageId = data.id;
                             }
-                            if (data.text) {
-                                if (firstChunk) {
-                                    bubble.innerHTML = ''; // Remove typing indicator
-                                    firstChunk = false;
-                                }
-                                fullText += data.text;
-                                bubble.innerHTML = renderMarkdown(fullText);
-                                renderMath(bubble);
+                            if (data.image_generation_started && !imageGenerationStarted) {
+                                imageGenerationStarted = true;
+                                renderImageLoadingCard(bubble);
+                                firstChunk = false;
                             }
-                             if (data.image) {
-                                if (firstChunk) { bubble.innerHTML = ''; firstChunk = false; }
+                            if (data.text) {
+                                fullText += data.text;
+                                if (!imageGenerationStarted) {
+                                    if (firstChunk) {
+                                        bubble.innerHTML = ''; // Remove typing indicator
+                                        firstChunk = false;
+                                    }
+                                    bubble.innerHTML = renderMarkdown(fullText);
+                                    renderMath(bubble);
+                                }
+                            }
+                            if (data.image) {
+                                if (!imageGenerationStarted) {
+                                    imageGenerationStarted = true;
+                                    renderImageLoadingCard(bubble);
+                                }
+                                const loadingCard = bubble.querySelector('.image-loading-card');
+                                if (loadingCard) {
+                                    loadingCard.classList.add('exit');
+                                    setTimeout(() => loadingCard.remove(), 220);
+                                } else if (firstChunk) {
+                                    bubble.innerHTML = '';
+                                }
+                                firstChunk = false;
                                 images.push(data.image);
-                                const img = document.createElement('img');
-                                img.src = data.image;
-                                img.style.maxWidth = '100%';
-                                bubble.appendChild(img);
+                                bubble.classList.add('ai-image-result');
+                                bubble.appendChild(createGeneratedImageTile(data.image, true));
                             }
                         } catch (e) {
                             console.error('SSE Parse Error', e, 'line:', trimmed);
@@ -924,8 +1214,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Cleanup
             if (firstChunk) {
-                bubble.textContent = "No response from AI.";
+                if (isImageModel && fullText.trim()) {
+                    bubble.innerHTML = renderMarkdown(fullText);
+                    renderMath(bubble);
+                    firstChunk = false;
+                } else {
+                    bubble.textContent = "No response from AI.";
+                }
             } else {
+                if (isImageModel && images.length > 0 && fullText.trim()) {
+                    appendImageCaption(bubble, fullText);
+                }
+
                 const assistantMessage = {
                    role: 'assistant',
                    content: fullText
@@ -946,7 +1246,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error(error);
-            bubble.textContent = "Failed to connect to server.";
+            const hasRenderedContent = Boolean(bubble.textContent?.trim()) || bubble.querySelector('img, p, pre, code, ul, ol, table');
+            if (!hasRenderedContent) {
+                bubble.textContent = "Failed to connect to server.";
+            }
         }
     }
 
