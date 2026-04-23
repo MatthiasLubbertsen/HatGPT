@@ -92,4 +92,5 @@ so i used ai to help me with the rest wich is declared here (grabbed from my cha
 * title with public key
 * rate limiting
 * removing image upload
+* image generation deletion
 </details>

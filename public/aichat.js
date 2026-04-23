@@ -295,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatHistoryState.forEach((message, idx) => {
             const role = message.role === 'assistant' ? 'ai' : 'user';
             const text = extractTextFromMessage(message);
+            const images = message.images || [];
             
             let displayText = text;
             let displayQuote = null;
@@ -315,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const ui = addMessage(role, displayText, false, displayQuote);
+            const ui = addMessage(role, displayText, false, displayQuote, images);
             if (role === 'ai') {
                 renderMath(ui.bubble);
                 addAiActions(ui.row, findPreviousUserPrompt(chatHistoryState, idx));
@@ -719,7 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Message Handling
-    function addMessage(role, text, isLoading = false, quote = null) {
+    function addMessage(role, text, isLoading = false, quote = null, images = []) {
         const row = document.createElement('div');
         row.className = `message-row ${role}-message-row`;
         
@@ -747,6 +748,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             bubble.textContent = text;
+        }
+
+        // Add images if present
+        if (Array.isArray(images) && images.length > 0) {
+            for (const imageUrl of images) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.style.maxWidth = '100%';
+                img.style.marginTop = '8px';
+                bubble.appendChild(img);
+            }
         }
 
         row.appendChild(bubble);
@@ -812,7 +824,17 @@ document.addEventListener('DOMContentLoaded', () => {
         //     return;
         // }
 
+        // Check if this is an image generation model
+        const isImageModel = model && model.includes('image');
         const requestPayload = { apiKey, model, messages: chatHistoryState };
+
+        // Add image generation parameters if using an image model
+        if (isImageModel) {
+            requestPayload.modalities = ['image', 'text'];
+            requestPayload.image_config = {
+                aspect_ratio: '1:1'
+            };
+        }
 
         try {
             const response = await fetch('/api/ai', {
@@ -823,22 +845,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const err = await response.json().catch(() => ({}));
+                console.error('API Error response:', response.status, err);
                 bubble.textContent = `Error: ${err.error || response.statusText}`;
+                return;
+            }
+
+            console.log('Response status:', response.status, 'Content-Type:', response.headers.get('content-type'));
+
+            if (!response.body) {
+                console.error('No response body!');
+                bubble.textContent = "Error: No response body from server";
                 return;
             }
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let fullText = '';
+            let images = [];
             let messageId = null;
             let buffer = '';
             let firstChunk = true;
+            let chunkCount = 0;
+            let rawDataReceived = '';
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
                 const chunk = decoder.decode(value, { stream: true });
+                rawDataReceived += chunk;
+                console.log(`[Raw chunk] ${chunk.length} bytes:`, chunk.substring(0, 150));
+                
                 buffer += chunk;
                 const lines = buffer.split('\n');
                 buffer = lines.pop(); 
@@ -849,6 +886,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (trimmed.startsWith('data: ')) {
                         try {
                             const data = JSON.parse(trimmed.substring(6));
+                            chunkCount++;
+                            console.log(`[SSE Chunk ${chunkCount}]`, data);
+                            
                             if (data.id) {
                                 messageId = data.id;
                             }
@@ -863,13 +903,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                              if (data.image) {
                                 if (firstChunk) { bubble.innerHTML = ''; firstChunk = false; }
+                                images.push(data.image);
                                 const img = document.createElement('img');
                                 img.src = data.image;
                                 img.style.maxWidth = '100%';
                                 bubble.appendChild(img);
                             }
                         } catch (e) {
-                            console.error('SSE Parse Error', e);
+                            console.error('SSE Parse Error', e, 'line:', trimmed);
                         }
                     }
                 }
@@ -878,14 +919,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            console.log(`[Stream Complete] Total chunks: ${chunkCount}, firstChunk: ${firstChunk}, fullText length: ${fullText.length}, images: ${images.length}`);
+            console.log(`[Raw data received] ${rawDataReceived.length} bytes:`, rawDataReceived.substring(0, 500));
+
             // Cleanup
             if (firstChunk) {
                 bubble.textContent = "No response from AI.";
             } else {
-                chatHistoryState.push({
+                const assistantMessage = {
                    role: 'assistant',
                    content: fullText
-                });
+                };
+                if (images.length > 0) {
+                    assistantMessage.images = images;
+                }
+                chatHistoryState.push(assistantMessage);
                 saveCurrentChat();
             }
 

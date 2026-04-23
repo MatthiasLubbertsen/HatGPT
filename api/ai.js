@@ -37,8 +37,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  let { apiKey, model, messages, plugins } = req.body;
-  // console.log("Received request with model:", model, "and messages count:", Array.isArray(messages) ? messages.length : 0);
+  let { apiKey, model, messages, plugins, modalities, image_config } = req.body;
+  console.log("Received request with model:", model, "modalities:", modalities, "image_config:", image_config);
 
   if (!model || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Missing required fields: model, messages[]' });
@@ -88,6 +88,10 @@ export default async function handler(req, res) {
     };
 
     if (plugins) requestBody.plugins = plugins;
+    if (modalities) requestBody.modalities = modalities;
+    if (image_config) requestBody.image_config = image_config;
+
+    console.log("Sending request to OpenRouter with body:", JSON.stringify(requestBody).substring(0, 200));
 
     const response = await fetch("https://ai.hackclub.com/proxy/v1/chat/completions", {
       method: "POST",
@@ -97,6 +101,8 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify(requestBody)
     });
+
+    console.log("OpenRouter response status:", response.status, response.ok);
 
     if (!response.ok) {
         const errorText = await response.text();
@@ -115,16 +121,28 @@ export default async function handler(req, res) {
       'Connection': 'keep-alive',
     });
 
-    if (response.body) {
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+    if (!response.body) {
+      console.error('[Server] OpenRouter response has no body!');
+      res.write(`data: ${JSON.stringify({ error: 'OpenRouter response had no body' })}\n\n`);
+      res.end();
+      return;
+    }
 
-      while (true) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let chunkCount = 0;
+    let firstRawChunk = true;
+
+    while (true) {
         const { done, value } = await reader.read();
         if (done) break;
             
         const chunk = decoder.decode(value, { stream: true });
+        if (firstRawChunk) {
+          console.log('[Server] First chunk received:', chunk.substring(0, 300));
+          firstRawChunk = false;
+        }
         buffer += chunk;
         const lines = buffer.split('\n');
         buffer = lines.pop();
@@ -132,10 +150,15 @@ export default async function handler(req, res) {
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed || trimmed === 'data: [DONE]') continue;
-          if (!trimmed.startsWith('data: ')) continue;
+          if (!trimmed.startsWith('data: ')) {
+            if (trimmed && chunkCount === 0) console.log('[Server] Non-SSE line:', trimmed.substring(0, 100));
+            continue;
+          }
 
           try {
             const data = JSON.parse(trimmed.slice(6));
+            chunkCount++;
+            console.log(`[Server SSE ${chunkCount}] Keys:`, Object.keys(data));
 
             // Pass through upstream id if present
             if (data.id) {
@@ -147,12 +170,47 @@ export default async function handler(req, res) {
             if (typeof deltaContent === 'string') {
               res.write(`data: ${JSON.stringify({ text: deltaContent })}\n\n`);
             }
+
+            // Handle images in streaming response
+            const delta = data.choices?.[0]?.delta;
+            
+            // Try multiple possible image locations in the response
+            let images = [];
+            if (delta?.images && Array.isArray(delta.images)) {
+              images = delta.images;
+            } else if (delta?.image && !Array.isArray(delta.image)) {
+              // Single image in delta.image
+              images = [delta.image];
+            } else if (data.choices?.[0]?.message?.images) {
+              // Full message images in non-streaming style
+              images = data.choices[0].message.images;
+            }
+
+            // Extract and send image URLs
+            for (const image of images) {
+              let imageUrl = null;
+              if (typeof image === 'string') {
+                // Direct string URL
+                imageUrl = image;
+              } else if (image.image_url) {
+                // Object with image_url field
+                imageUrl = typeof image.image_url === 'string' ? image.image_url : image.image_url.url;
+              } else if (image.url) {
+                // Object with url field
+                imageUrl = image.url;
+              }
+              
+              if (imageUrl) {
+                console.log(`[Server SSE ${chunkCount}] Found image`);
+                res.write(`data: ${JSON.stringify({ image: imageUrl })}\n\n`);
+              }
+            }
           } catch (e) {
-            console.error('Error parsing upstream chunk', e);
+            console.error('Error parsing upstream chunk', e, 'line:', trimmed);
           }
         }
       }
-    }
+      console.log(`[Server] Stream complete, sent ${chunkCount} chunks`);
     res.end();
 
   } catch (error) {
