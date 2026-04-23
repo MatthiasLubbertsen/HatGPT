@@ -172,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const openSettings = () => {
+        closeMobileSidebar();
         const profile = loadProfile();
         if (nameInput) nameInput.value = profile.name || '';
         if (avatarInput) avatarInput.value = profile.useGravatar ? (profile.gravatarEmail || '') : (profile.avatar || '');

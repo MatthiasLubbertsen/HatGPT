@@ -62,9 +62,9 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 - [x] test image upload - end up removing it
 - [x] test file upload - same as above
 - [x] test image generation
-- [ ] phone view top bar styling
-- [ ] phone view sidebar > settings close it
-- [ ] center 'Ask anything' text
+- [x] phone view top bar styling
+- [x] phone view sidebar > settings close it
+- [x] center 'Ask anything' text
 
 <details>
 <summary>AI declaration</summary>
@@ -94,4 +94,8 @@ so i used ai to help me with the rest wich is declared here (grabbed from my cha
 * removing image upload
 * image generation deletion
 * image generation style fix
+* auto close mobile sidebar on settings open
+* mobile styling
+* message under input
+* centering 'Ask anything' text
 </details>
