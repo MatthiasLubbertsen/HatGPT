@@ -1471,14 +1471,19 @@ body.chat-mode .chat-input-note {
 
     .main-content {
         width: 100%;
+        display: flex;
+        flex-direction: column;
     }
 
     .main-header {
-        position: sticky;
+        position: fixed;
         top: 0;
+        left: 0;
+        right: 0;
         z-index: 20;
         background-color: var(--bg-color);
         padding: 10px 12px;
+        height: var(--mobile-header-height);
     }
 
     .mobile-sidebar-toggle {
@@ -1486,13 +1491,21 @@ body.chat-mode .chat-input-note {
     }
 
     .content-wrapper {
-        margin-top: 0;
+        margin-top: var(--mobile-header-height);
         padding: 0 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        padding-bottom: 160px;
     }
 
     body.chat-mode .content-wrapper {
-        margin-top: 0;
-        height: calc(100vh - var(--mobile-header-height));
+        margin-top: var(--mobile-header-height);
+        height: auto;
+        padding-bottom: 160px;
+        justify-content: flex-start;
     }
 
     .greeting {
@@ -1501,16 +1514,30 @@ body.chat-mode .chat-input-note {
     }
 
     .chat-input-container {
-        width: 100%;
-        border-radius: 20px;
-        padding: 8px 12px;
+        position: fixed;
+        bottom: calc(28px + env(safe-area-inset-bottom));
+        left: 12px;
+        right: 12px;
+        width: calc(100% - 24px);
+        border-radius: 27px;
+        padding: 10px 16px;
+        margin: 0;
+        z-index: 25;
+        background-color: var(--input-bg);
+        border: #ffffff0d 0.5px solid;
+        box-shadow: 0px 4px 12px 0px #0000001a,inset 0px 0px 1px 0px #fff3;
     }
 
     .chat-input-note {
-        width: 100%;
-        font-size: 0.82rem;
-        margin-top: 8px;
-        padding: 0 4px;
+        position: fixed;
+        bottom: calc(-3px + env(safe-area-inset-bottom));
+        left: 12px;
+        right: 12px;
+        width: calc(100% - 24px);
+        font-size: 0.7rem;
+        margin: 0;
+        padding: 0;
+        text-align: center;
     }
 
     .message-bubble,
@@ -1521,6 +1548,16 @@ body.chat-mode .chat-input-note {
 
     .message-row {
         max-width: 100%;
+    }
+
+    .chat-history {
+        padding: 0 12px;
+        margin-top: 16px;
+    }
+
+    .scroll-to-bottom {
+        right: 12px;
+        bottom: 130px;
     }
 
     .image-loading-card {
