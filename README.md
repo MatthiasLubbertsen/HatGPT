@@ -65,6 +65,7 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 - [x] phone view top bar styling
 - [x] phone view sidebar > settings close it
 - [x] center 'Ask anything' text
+- [ ] model selector scrollable
 
 <details>
 <summary>AI declaration</summary>
