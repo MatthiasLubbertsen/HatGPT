@@ -65,7 +65,7 @@ to let BrowserSync reload the page for you at `http://localhost:3001`
 - [x] phone view top bar styling
 - [x] phone view sidebar > settings close it
 - [x] center 'Ask anything' text
-- [ ] model selector scrollable
+- [x] model selector scrollable
 
 <details>
 <summary>AI declaration</summary>
@@ -99,4 +99,5 @@ so i used ai to help me with the rest wich is declared here (grabbed from my cha
 * mobile styling
 * message under input
 * centering 'Ask anything' text
+* make the model selector scrollable
 </details>

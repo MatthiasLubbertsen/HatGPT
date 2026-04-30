@@ -54,6 +54,8 @@ function initModelDropdown() {
 
     // Generate HTML
     Object.keys(modelsByProvider).sort().forEach(provider => {
+        // Skip provider groups that start with a tilde (~)
+        if (provider && provider.charAt(0) === '~') return;
         const providerItem = document.createElement('div');
         providerItem.className = 'provider-item';
         providerItem.textContent = provider;
@@ -70,13 +72,39 @@ function initModelDropdown() {
                 e.stopPropagation();
                 selectModel(model, model.friendlyName);
                 menu.style.display = 'none'; // Close main menu
+                submenu.style.display = 'none'; // Close child submenu
+                providerItem.classList.remove('active'); // Remove active state
                 dropdown.classList.remove('active');
             });
             submenu.appendChild(modelItem);
         });
-        
-        providerItem.appendChild(submenu);
-        
+
+        // Append provider item to menu, but append the submenu outside
+        // the scrollable menu so it isn't clipped. We'll append submenu
+        // to the dropdown container and position it to align with the
+        // provider item.
+        menu.appendChild(providerItem);
+        dropdown.appendChild(submenu);
+        // Position submenu to vertically align with providerItem
+        // We'll set left relative to the menu width so it appears to the right.
+        const alignSubmenu = () => {
+            // Position submenu relative to the dropdown container so it
+            // aligns vertically with the provider item inside the scrollable menu.
+            // Account for menu scroll position since providerItem.offsetTop is relative to the scrollable content.
+            const top = (menu.offsetTop || 0) + providerItem.offsetTop - menu.scrollTop;
+            const left = (menu.offsetLeft || 0) + menu.offsetWidth + 8;
+            submenu.style.top = top + 'px';
+            submenu.style.left = left + 'px';
+        };
+        // Initial align and on window resize, and menu scroll
+        alignSubmenu();
+        window.addEventListener('resize', alignSubmenu);
+        menu.addEventListener('scroll', () => {
+            if (submenu.style.display === 'block') {
+                alignSubmenu();
+            }
+        });
+
         // Handle hover for submenu
         providerItem.addEventListener('mouseenter', () => {
              // 1. Cancel any pending close from *previous* provider
@@ -89,13 +117,14 @@ function initModelDropdown() {
              document.querySelectorAll('.provider-submenu').forEach(sub => {
                  if (sub !== submenu) {
                      sub.style.display = 'none';
-                     if (sub.parentElement && sub.parentElement.classList.contains('provider-item')) {
-                         sub.parentElement.classList.remove('active');
-                     }
+                     // remove active class from corresponding provider if present
+                     const maybeProvider = sub.__providerItemRef;
+                     if (maybeProvider && maybeProvider.classList) maybeProvider.classList.remove('active');
                  }
              });
 
-             // 3. Show current
+             // 3. Show current submenu (it's outside the scroll container)
+             alignSubmenu();
              submenu.style.display = 'block';
              providerItem.classList.add('active');
         });
@@ -116,6 +145,7 @@ function initModelDropdown() {
                 clearTimeout(activeLeaveTimeout);
                 activeLeaveTimeout = null;
             }
+             alignSubmenu();
              submenu.style.display = 'block';
              providerItem.classList.add('active');
         });
@@ -127,10 +157,28 @@ function initModelDropdown() {
             }, 200);
         });
         
-        menu.appendChild(providerItem);
+        // keep a backreference so closing other submenus can remove provider active state
+        submenu.__providerItemRef = providerItem;
     });
     
     dropdown.appendChild(menu);
+
+    // Prevent scroll chaining / bounce on the main menu and submenus by
+    // intercepting wheel events at their edges and stopping propagation.
+    function preventBoundaryScroll(elem) {
+        elem.addEventListener('wheel', (e) => {
+            const delta = e.deltaY;
+            const atTop = elem.scrollTop === 0;
+            const atBottom = elem.scrollHeight - elem.clientHeight - elem.scrollTop <= 1;
+            if ((delta < 0 && atTop) || (delta > 0 && atBottom)) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, { passive: false });
+    }
+
+    preventBoundaryScroll(menu);
+    document.querySelectorAll('.provider-submenu').forEach(s => preventBoundaryScroll(s));
     
     // Toggle main dropdown
     dropdown.addEventListener('click', (e) => {

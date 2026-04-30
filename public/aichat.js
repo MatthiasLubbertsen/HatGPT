@@ -1123,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            console.log('Response status:', response.status, 'Content-Type:', response.headers.get('content-type'));
+            //console.log('Response status:', response.status, 'Content-Type:', response.headers.get('content-type'));
 
             if (!response.body) {
                 console.error('No response body!');
@@ -1148,7 +1148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const chunk = decoder.decode(value, { stream: true });
                 rawDataReceived += chunk;
-                console.log(`[Raw chunk] ${chunk.length} bytes:`, chunk.substring(0, 150));
+                //console.log(`[Raw chunk] ${chunk.length} bytes:`, chunk.substring(0, 150));
                 
                 buffer += chunk;
                 const lines = buffer.split('\n');
@@ -1161,7 +1161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         try {
                             const data = JSON.parse(trimmed.substring(6));
                             chunkCount++;
-                            console.log(`[SSE Chunk ${chunkCount}]`, data);
+                            //console.log(`[SSE Chunk ${chunkCount}]`, data);
                             
                             if (data.id) {
                                 messageId = data.id;
@@ -1209,8 +1209,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            console.log(`[Stream Complete] Total chunks: ${chunkCount}, firstChunk: ${firstChunk}, fullText length: ${fullText.length}, images: ${images.length}`);
-            console.log(`[Raw data received] ${rawDataReceived.length} bytes:`, rawDataReceived.substring(0, 500));
+            //console.log(`[Stream Complete] Total chunks: ${chunkCount}, firstChunk: ${firstChunk}, fullText length: ${fullText.length}, images: ${images.length}`);
+            //console.log(`[Raw data received] ${rawDataReceived.length} bytes:`, rawDataReceived.substring(0, 500));
 
             // Cleanup
             if (firstChunk) {

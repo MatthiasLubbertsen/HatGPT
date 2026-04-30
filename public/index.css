@@ -83,6 +83,71 @@ body {
     background-color: #2f2f2f;
 }
 
+/* Model selector menu styles - make list scrollable when long */
+.model-dropdown {
+    position: relative; /* anchor for absolute menu */
+}
+
+.model-options-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: #2f2f2f;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+    z-index: 60;
+    min-width: 280px;
+    max-width: 420px;
+    max-height: 320px; /* limit height to make it scrollable */
+    overflow-y: auto;
+    overflow-x: hidden; /* submenus are rendered outside the menu */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain; /* prevent scroll chaining / bounce */
+}
+
+.provider-item {
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: #e6e6e6;
+    cursor: default;
+    position: relative; /* anchor for its submenu */
+}
+
+.provider-item.active {
+    background: #353535;
+}
+
+.provider-submenu {
+    position: absolute;
+    top: 0;
+    left: calc(100% + 8px);
+    background: #2a2a2a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 6px;
+    min-width: 220px;
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: none;
+    z-index: 70;
+    overscroll-behavior-y: contain;
+}
+
+.model-item {
+    padding: 6px 8px;
+    border-radius: 6px;
+    color: #dcdcdc;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.model-item:hover {
+    background: #3a3a3a;
+    color: #ffffff;
+}
 .model-name {
     font-weight: 200;
     font-size: 1.1rem;

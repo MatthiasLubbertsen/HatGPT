@@ -38,7 +38,7 @@ export default async function handler(req, res) {
   }
 
   let { apiKey, model, messages, plugins, modalities, image_config } = req.body;
-  console.log("Received request with model:", model, "modalities:", modalities, "image_config:", image_config);
+  //console.log("Received request with model:", model, "modalities:", modalities, "image_config:", image_config);
 
   if (!model || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Missing required fields: model, messages[]' });
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
     if (modalities) requestBody.modalities = modalities;
     if (image_config) requestBody.image_config = image_config;
 
-    console.log("Sending request to OpenRouter with body:", JSON.stringify(requestBody).substring(0, 200));
+    //console.log("Sending request to OpenRouter with body:", JSON.stringify(requestBody).substring(0, 200));
 
     const response = await fetch("https://ai.hackclub.com/proxy/v1/chat/completions", {
       method: "POST",
@@ -102,7 +102,7 @@ export default async function handler(req, res) {
       body: JSON.stringify(requestBody)
     });
 
-    console.log("OpenRouter response status:", response.status, response.ok);
+    //console.log("OpenRouter response status:", response.status, response.ok);
 
     if (!response.ok) {
         const errorText = await response.text();
@@ -141,7 +141,7 @@ export default async function handler(req, res) {
             
         const chunk = decoder.decode(value, { stream: true });
         if (firstRawChunk) {
-          console.log('[Server] First chunk received:', chunk.substring(0, 300));
+          //console.log('[Server] First chunk received:', chunk.substring(0, 300));
           firstRawChunk = false;
         }
         buffer += chunk;
@@ -159,7 +159,7 @@ export default async function handler(req, res) {
           try {
             const data = JSON.parse(trimmed.slice(6));
             chunkCount++;
-            console.log(`[Server SSE ${chunkCount}] Keys:`, Object.keys(data));
+            //console.log(`[Server SSE ${chunkCount}] Keys:`, Object.keys(data));
 
             // Pass through upstream id if present
             if (data.id) {
@@ -207,7 +207,7 @@ export default async function handler(req, res) {
               }
               
               if (imageUrl) {
-                console.log(`[Server SSE ${chunkCount}] Found image`);
+                //console.log(`[Server SSE ${chunkCount}] Found image`);
                 res.write(`data: ${JSON.stringify({ image: imageUrl })}\n\n`);
               }
             }
@@ -216,7 +216,7 @@ export default async function handler(req, res) {
           }
         }
       }
-      console.log(`[Server] Stream complete, sent ${chunkCount} chunks`);
+      //console.log(`[Server] Stream complete, sent ${chunkCount} chunks`);
     res.end();
 
   } catch (error) {
