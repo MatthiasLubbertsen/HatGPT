@@ -1,1 +1,0 @@
-**Muhammad Atif** - the hat logo from flaticon.com 
